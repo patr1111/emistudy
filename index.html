@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EmilyとJoyoを助ける英単語スゴロク</title>
+    <style>
+      :root {
+        --bg: #fff9ef;
+        --card: #ffffff;
+        --main: #ff7b54;
+        --sub: #5f6caf;
+        --ok: #2f9e44;
+        --ng: #d9480f;
+        --text: #2d2a32;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, #fff4d6 0%, #fff9ef 60%, #eef7ff 100%);
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        font-size: clamp(1.3rem, 2.5vw, 2rem);
+        margin-bottom: 8px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+      .story {
+        line-height: 1.7;
+        font-size: 1rem;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(80px, 1fr));
+        gap: 10px;
+      }
+      .cell {
+        border: 2px solid #ffe0b2;
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        background: #fffaf3;
+      }
+      .cell.active {
+        border-color: var(--main);
+        background: #fff1e8;
+      }
+      .cell.cleared {
+        border-color: var(--ok);
+        background: #ebfbee;
+      }
+      .tool {
+        font-size: 0.85rem;
+        margin-top: 4px;
+        color: #495057;
+      }
+      .question {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+      .choices {
+        display: grid;
+        gap: 8px;
+      }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      .choice-btn {
+        text-align: left;
+        background: #f1f3f5;
+      }
+      .choice-btn:hover {
+        background: #e9ecef;
+      }
+      .primary {
+        background: var(--main);
+        color: white;
+      }
+      .secondary {
+        background: var(--sub);
+        color: white;
+      }
+      .result {
+        margin-top: 12px;
+        font-weight: bold;
+      }
+      .ok { color: var(--ok); }
+      .ng { color: var(--ng); }
+      .small {
+        font-size: 0.9rem;
+        color: #495057;
+      }
+      .hidden { display: none; }
+      .inventory {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        background: #edf2ff;
+        color: #364fc7;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1>EmilyとJoyoを助ける！英検準2級単語スゴロク</h1>
+
+      <section id="opening" class="card story">
+        <p>
+          ある日、Emily（えみり）は大切な親友Joyo（じょよ）からメッセージを受け取りました。<br />
+          「Emily、黒沢くんにいじめられてるの…」
+        </p>
+        <p>
+          Emilyは決意します。<br />
+          「Joyoを助けに行かなきゃ！英単語スゴロクを5コマ進んで、黒沢くんを止める道具を集めるんだ！」
+        </p>
+        <button id="startBtn" class="primary">ぼうけんをはじめる</button>
+      </section>
+
+      <section class="card">
+        <h2>スゴロクマップ（5コマ）</h2>
+        <div id="board" class="board"></div>
+        <p class="small">各コマで20問中15問正解するとクリア！</p>
+      </section>
+
+      <section id="statusCard" class="card hidden">
+        <h2 id="stageTitle"></h2>
+        <p id="stageIntro"></p>
+        <p class="small">正解数: <span id="score">0</span> / 20（クリア条件: 15問以上）</p>
+      </section>
+
+      <section id="quizCard" class="card hidden">
+        <p id="questionText" class="question"></p>
+        <div id="choices" class="choices"></div>
+        <p id="answerReveal" class="result"></p>
+        <button id="nextBtn" class="secondary hidden">つぎのもんだいへ</button>
+      </section>
+
+      <section class="card">
+        <h2>手に入れた道具</h2>
+        <div id="inventory" class="inventory"></div>
+      </section>
+
+      <section id="ending" class="card hidden story"></section>
+    </main>
+
+    <script>
+      const stageTools = [
+        "ひかるシールド",
+        "ことばのつるぎ",
+        "ゆうきのブーツ",
+        "まもりのホイッスル",
+        "きずなのハンマー"
+      ];
+
+      const words = [
+        { word: "accept", jp: "受け入れる" },
+        { word: "achieve", jp: "達成する" },
+        { word: "advice", jp: "助言" },
+        { word: "allow", jp: "許可する" },
+        { word: "ancient", jp: "古代の" },
+        { word: "appear", jp: "現れる" },
+        { word: "argue", jp: "議論する" },
+        { word: "attend", jp: "出席する" },
+        { word: "aware", jp: "気づいている" },
+        { word: "benefit", jp: "利益" },
+        { word: "career", jp: "経歴" },
+        { word: "challenge", jp: "挑戦" },
+        { word: "choice", jp: "選択" },
+        { word: "compare", jp: "比較する" },
+        { word: "complete", jp: "完成させる" },
+        { word: "consider", jp: "よく考える" },
+        { word: "decide", jp: "決める" },
+        { word: "develop", jp: "発達させる" },
+        { word: "effort", jp: "努力" },
+        { word: "environment", jp: "環境" },
+        { word: "especially", jp: "特に" },
+        { word: "explain", jp: "説明する" },
+        { word: "favorite", jp: "お気に入りの" },
+        { word: "future", jp: "未来" },
+        { word: "increase", jp: "増加する" },
+        { word: "instead", jp: "その代わりに" },
+        { word: "local", jp: "地元の" },
+        { word: "manage", jp: "管理する" },
+        { word: "message", jp: "伝言" },
+        { word: "possible", jp: "可能な" },
+        { word: "prepare", jp: "準備する" },
+        { word: "protect", jp: "守る" },
+        { word: "realize", jp: "気づく" },
+        { word: "reduce", jp: "減らす" },
+        { word: "remember", jp: "覚えている" },
+        { word: "respect", jp: "尊敬する" },
+        { word: "return", jp: "戻る" },
+        { word: "situation", jp: "状況" },
+        { word: "support", jp: "支える" },
+        { word: "travel", jp: "旅行する" },
+      ];
+
+      const state = {
+        stage: 0,
+        currentQuestion: 0,
+        score: 0,
+        quizSet: [],
+        answered: false,
+        tools: []
+      };
+
+      const boardEl = document.getElementById("board");
+      const openingEl = document.getElementById("opening");
+      const statusCard = document.getElementById("statusCard");
+      const quizCard = document.getElementById("quizCard");
+      const stageTitle = document.getElementById("stageTitle");
+      const stageIntro = document.getElementById("stageIntro");
+      const scoreEl = document.getElementById("score");
+      const questionText = document.getElementById("questionText");
+      const choicesEl = document.getElementById("choices");
+      const answerReveal = document.getElementById("answerReveal");
+      const nextBtn = document.getElementById("nextBtn");
+      const inventoryEl = document.getElementById("inventory");
+      const endingEl = document.getElementById("ending");
+
+      function shuffle(array) {
+        const clone = [...array];
+        for (let i = clone.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [clone[i], clone[j]] = [clone[j], clone[i]];
+        }
+        return clone;
+      }
+
+      function renderBoard() {
+        boardEl.innerHTML = "";
+        for (let i = 0; i < 5; i++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          if (i < state.stage) cell.classList.add("cleared");
+          if (i === state.stage && state.stage < 5) cell.classList.add("active");
+          cell.innerHTML = `<strong>コマ ${i + 1}</strong><div class="tool">${stageTools[i]}</div>`;
+          boardEl.appendChild(cell);
+        }
+      }
+
+      function renderInventory() {
+        inventoryEl.innerHTML = "";
+        if (state.tools.length === 0) {
+          inventoryEl.innerHTML = '<span class="small">まだどうぐはありません。</span>';
+          return;
+        }
+        state.tools.forEach((tool) => {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = tool;
+          inventoryEl.appendChild(chip);
+        });
+      }
+
+      function makeQuizSet() {
+        state.quizSet = shuffle(words).slice(0, 20).map((item) => {
+          const wrong = shuffle(words.filter((w) => w.word !== item.word))
+            .slice(0, 3)
+            .map((w) => w.jp);
+          const choices = shuffle([item.jp, ...wrong]);
+          return { ...item, choices };
+        });
+      }
+
+      function showQuestion() {
+        const q = state.quizSet[state.currentQuestion];
+        state.answered = false;
+        answerReveal.textContent = "";
+        answerReveal.className = "result";
+        nextBtn.classList.add("hidden");
+
+        questionText.textContent = `Q${state.currentQuestion + 1}. ${q.word} のいみは？`;
+        choicesEl.innerHTML = "";
+
+        q.choices.forEach((choice) => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn";
+          btn.textContent = choice;
+          btn.addEventListener("click", () => answerQuestion(choice));
+          choicesEl.appendChild(btn);
+        });
+      }
+
+      function answerQuestion(choice) {
+        if (state.answered) return;
+        state.answered = true;
+        const q = state.quizSet[state.currentQuestion];
+        const isCorrect = choice === q.jp;
+        if (isCorrect) state.score += 1;
+        scoreEl.textContent = state.score;
+
+        answerReveal.textContent = `${isCorrect ? "せいかい！" : "ざんねん！"} 正解は「${q.jp}」`;
+        answerReveal.classList.add(isCorrect ? "ok" : "ng");
+        nextBtn.classList.remove("hidden");
+      }
+
+      function startStage() {
+        statusCard.classList.remove("hidden");
+        quizCard.classList.remove("hidden");
+        stageTitle.textContent = `コマ ${state.stage + 1} / 5`;
+        if (state.stage === 4) {
+          stageIntro.textContent = "黒沢くんが立ちはだかった！黒沢くん『あっちいけー！』";
+        } else {
+          stageIntro.textContent = "20問中15問以上正解して先に進もう。";
+        }
+
+        state.currentQuestion = 0;
+        state.score = 0;
+        scoreEl.textContent = 0;
+        makeQuizSet();
+        showQuestion();
+        renderBoard();
+      }
+
+      function finishStage() {
+        if (state.score >= 15) {
+          const tool = stageTools[state.stage];
+          state.tools.push(tool);
+          alert(`コマ ${state.stage + 1} クリア！\n${tool} を手に入れた！`);
+          state.stage += 1;
+          renderInventory();
+          renderBoard();
+          if (state.stage === 5) {
+            showEnding();
+          } else {
+            startStage();
+          }
+        } else {
+          alert(`コマ ${state.stage + 1} しっぱい… ${state.score}問正解。\n15問以上でクリアなので、もう一どチャレンジ！`);
+          startStage();
+        }
+      }
+
+      function showEnding() {
+        statusCard.classList.add("hidden");
+        quizCard.classList.add("hidden");
+        endingEl.classList.remove("hidden");
+        endingEl.innerHTML = `
+          <h2>エンディング</h2>
+          <p>Emilyは5つの道具を使って黒沢くんに立ち向かいました。</p>
+          <p>黒沢くんはぐったりして、<strong>「参ったー」</strong>と言って逃げていきました。</p>
+          <p>JoyoはEmilyににっこり笑って、<strong>「えみり、ありがとう！」</strong>と伝えました。</p>
+          <p>🎉 クリアおめでとう！</p>
+        `;
+      }
+
+      nextBtn.addEventListener("click", () => {
+        state.currentQuestion += 1;
+        if (state.currentQuestion >= 20) {
+          finishStage();
+        } else {
+          showQuestion();
+        }
+      });
+
+      document.getElementById("startBtn").addEventListener("click", () => {
+        openingEl.classList.add("hidden");
+        startStage();
+      });
+
+      renderBoard();
+      renderInventory();
+    </script>
+  </body>
+</html>
