@@ -1,388 +1,365 @@
 <!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EmilyとJoyoを助ける英単語スゴロク</title>
-    <style>
-      :root {
-        --bg: #fff9ef;
-        --card: #ffffff;
-        --main: #ff7b54;
-        --sub: #5f6caf;
-        --ok: #2f9e44;
-        --ng: #d9480f;
-        --text: #2d2a32;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-        color: var(--text);
-        background: linear-gradient(180deg, #fff4d6 0%, #fff9ef 60%, #eef7ff 100%);
-        min-height: 100vh;
-      }
-      .container {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      h1 {
-        font-size: clamp(1.3rem, 2.5vw, 2rem);
-        margin-bottom: 8px;
-      }
-      .card {
-        background: var(--card);
-        border-radius: 14px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-        padding: 18px;
-        margin-bottom: 16px;
-      }
-      .story {
-        line-height: 1.7;
-        font-size: 1rem;
-      }
-      .board {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(80px, 1fr));
-        gap: 10px;
-      }
-      .cell {
-        border: 2px solid #ffe0b2;
-        border-radius: 12px;
-        padding: 10px;
-        text-align: center;
-        background: #fffaf3;
-      }
-      .cell.active {
-        border-color: var(--main);
-        background: #fff1e8;
-      }
-      .cell.cleared {
-        border-color: var(--ok);
-        background: #ebfbee;
-      }
-      .tool {
-        font-size: 0.85rem;
-        margin-top: 4px;
-        color: #495057;
-      }
-      .question {
-        font-size: 1.2rem;
-        margin-bottom: 12px;
-      }
-      .choices {
-        display: grid;
-        gap: 8px;
-      }
-      button {
-        border: none;
-        border-radius: 10px;
-        padding: 10px 12px;
-        font-size: 1rem;
-        cursor: pointer;
-      }
-      .choice-btn {
-        text-align: left;
-        background: #f1f3f5;
-      }
-      .choice-btn:hover {
-        background: #e9ecef;
-      }
-      .primary {
-        background: var(--main);
-        color: white;
-      }
-      .secondary {
-        background: var(--sub);
-        color: white;
-      }
-      .result {
-        margin-top: 12px;
-        font-weight: bold;
-      }
-      .ok { color: var(--ok); }
-      .ng { color: var(--ng); }
-      .small {
-        font-size: 0.9rem;
-        color: #495057;
-      }
-      .hidden { display: none; }
-      .inventory {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .chip {
-        background: #edf2ff;
-        color: #364fc7;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 0.85rem;
-      }
-    </style>
-  </head>
-  <body>
-    <main class="container">
-      <h1>EmilyとJoyoを助ける！英検準2級単語スゴロク</h1>
+<html lang="ja" class="landing" data-taste="kawaii">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>きらめき英単語</title>
+  <meta name="description" content="小学生が日常で使う英語を、ゲームで増やす無料の学習サイト。ログイン不要。試験対策ではなく、意味のわかる基本語を積みます。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="hub" class="screen on">
+    <header class="lp-header">
+      <a class="lp-brand" href="#top">
+        <span class="lp-brand-en">KIRAMEKI</span>
+        <span class="lp-brand-ja">きらめき英単語</span>
+      </a>
+      <button class="lp-menu" type="button" id="lp-menu" aria-label="メニューを開く" aria-expanded="false">メニュー</button>
+      <nav class="lp-nav" id="lp-nav">
+        <a href="#concept">コンセプト</a>
+        <a href="#safety">安全</a>
+        <a href="#games">ゲーム</a>
+        <a href="#howto">使い方</a>
+        <a href="#news">新着</a>
+        <a href="#board">掲示板</a>
+        <button type="button" class="lp-nav-btn js-open-adult">管理画面</button>
+      </nav>
+    </header>
 
-      <section id="opening" class="card story">
-        <p>
-          ある日、Emily（えみり）は大切な親友Joyo（じょよ）からメッセージを受け取りました。<br />
-          「Emily、黒沢くんにいじめられてるの…」
-        </p>
-        <p>
-          Emilyは決意します。<br />
-          「Joyoを助けに行かなきゃ！英単語スゴロクを5コマ進んで、黒沢くんを止める道具を集めるんだ！」
-        </p>
-        <button id="startBtn" class="primary">ぼうけんをはじめる</button>
-      </section>
+    <section class="lp-hero" id="top">
+      <img class="lp-hero-img" src="img/hero.jpg" alt="親子が静かな食卓で学習している様子" />
+      <div class="lp-hero-shade"></div>
+      <div class="lp-hero-copy">
+        <p class="lp-kicker">登録なし・完全無料</p>
+        <h1>日常の英語を、<br />ゲームで増やす。</h1>
+        <p class="lp-lead">試験の出る順ではなく、小学3年生が日本語で意味をつかめる語を積みます。</p>
+        <div class="lp-hero-actions">
+          <a class="lp-btn lp-btn-solid" href="#games">ゲームを選ぶ</a>
+          <button class="lp-btn lp-btn-ghost js-open-adult" type="button">管理画面を開く</button>
+        </div>
+      </div>
+    </section>
 
-      <section class="card">
-        <h2>スゴロクマップ（5コマ）</h2>
-        <div id="board" class="board"></div>
-        <p class="small">各コマで20問中15問正解するとクリア！</p>
-      </section>
+    <section class="lp-section lp-section-alt" id="concept">
+      <div class="lp-wrap lp-split">
+        <div>
+          <p class="lp-kicker dark">Concept</p>
+          <h2>コンセプト</h2>
+          <div class="lp-story">
+            <p>級が上がると、日本語でも意味が取れない抽象語が増えます。単語を淡々と覚えるのも、子どもには楽しくありません。</p>
+            <p>このサイトは、日常で意味のわかる語を、ゲームで増やします。自分や友達の写真を入れて遊べます。全部終わったら渡すご褒美の写真を出しておけば、途中でも目標が見えます。</p>
+            <p>欲しいものが見当たらなかったので、個人で作りました。不具合はご容赦ください。直してほしい点は、<a href="#board">掲示板</a>へお願いします。</p>
+          </div>
+          <div class="lp-points">
+            <article>
+              <h3>試験対策ではない</h3>
+              <p>出る順や累積語彙ではなく、日常で使う基本語を増やします。公害・政治などの社会語や、マニアックな語は入れていません。</p>
+            </article>
+            <article>
+              <h3>意味が取れる語だけ</h3>
+              <p>対象の目安は準2級〜2級相当のうち、小学3年生が日本語で意味をつかめる語です。recycle のような身近な語は残しています。</p>
+            </article>
+            <article>
+              <h3>親が見て、子が遊ぶ</h3>
+              <p>級・漢字・雰囲気・ご褒美は管理画面で決めます。ゲーム画面は絵と短い反応で進み、説明文を読まなくても遊べます。</p>
+            </article>
+          </div>
+        </div>
+        <figure class="lp-figure">
+          <img src="img/concept.jpg" alt="机の上の単語カードと文房具" />
+          <figcaption>記録はこの端末のブラウザに残ります。サーバーには送りません。</figcaption>
+        </figure>
+      </div>
+    </section>
 
-      <section id="statusCard" class="card hidden">
-        <h2 id="stageTitle"></h2>
-        <p id="stageIntro"></p>
-        <p class="small">正解数: <span id="score">0</span> / 20（クリア条件: 15問以上）</p>
-      </section>
+    <section class="lp-safety" id="safety">
+      <div class="lp-wrap lp-safety-row">
+        <article>
+          <h3>登録しません</h3>
+          <p>ログインも、会員登録もありません。</p>
+        </article>
+        <article>
+          <h3>お金はかかりません</h3>
+          <p>決済も、課金もありません。</p>
+        </article>
+        <article>
+          <h3>外に出ません</h3>
+          <p>学習の記録も写真も、この端末の中だけです。サーバーには送りません。</p>
+        </article>
+      </div>
+    </section>
 
-      <section id="quizCard" class="card hidden">
-        <p id="questionText" class="question"></p>
-        <div id="choices" class="choices"></div>
-        <p id="answerReveal" class="result"></p>
-        <button id="nextBtn" class="secondary hidden">つぎのもんだいへ</button>
-      </section>
+    <section class="lp-section" id="games">
+      <div class="lp-wrap">
+        <p class="lp-kicker dark">Play</p>
+        <h2>ゲームを選ぶ</h2>
+        <p class="lp-intro">単語の進みは、どのゲームでも共通です。あるゲームでクリアした語は、ほかのゲームでは出ません。あとからゲームを足しても、続きの単語から始まります。</p>
+        <div class="lp-games">
+          <a class="lp-game" href="shop.html">
+            <img src="img/game-shop.jpg" alt="おかいものライブのイメージ" />
+            <div class="lp-game-body">
+              <span class="lp-game-tag">10問ずつ</span>
+              <h3>おかいものライブ</h3>
+              <p>仲間と場所を選んでお使いへ。正解するとリボンが貯まります。</p>
+              <span class="lp-game-go">ゲーム画面へ</span>
+            </div>
+          </a>
+          <a class="lp-game" href="rescue.html">
+            <img src="img/game-rescue.jpg" alt="ともだちをたすけるのイメージ" />
+            <div class="lp-game-body">
+              <span class="lp-game-tag">場所を5つ</span>
+              <h3>ともだちをたすける</h3>
+              <p>マップの道をひとつずつ進み、どうぐを集めて友達のところへ向かいます。</p>
+              <span class="lp-game-go">ゲーム画面へ</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
 
-      <section class="card">
-        <h2>手に入れた道具</h2>
-        <div id="inventory" class="inventory"></div>
-      </section>
+    <section class="lp-section" id="howto">
+      <div class="lp-wrap">
+        <p class="lp-kicker dark">How to use</p>
+        <h2>使い方</h2>
+        <ol class="lp-steps">
+          <li>
+            <span class="lp-num">01</span>
+            <div>
+              <h3>管理画面を開く</h3>
+              <p>難易度（級は複数可）、漢字の量、雰囲気、ご褒美の写真を決めます。抽象的な語を外すこともできます。</p>
+            </div>
+          </li>
+          <li>
+            <span class="lp-num">02</span>
+            <div>
+              <h3>ゲームを選択</h3>
+              <p>管理画面で設定した内容でゲームがスタートします。</p>
+            </div>
+          </li>
+          <li>
+            <span class="lp-num">03</span>
+            <div>
+              <h3>10問ずつ進める</h3>
+              <p>英語を見て日本語を6択で選びます。まちがえた語はリストに残り、クリアした語はどのゲームでも出ません。</p>
+            </div>
+          </li>
+          <li>
+            <span class="lp-num">04</span>
+            <div>
+              <h3>記録を残す</h3>
+              <p>日々の進捗はブラウザに保存されます。別のパソコンへ移すときは、管理画面からJSONを書き出して読み込みます。</p>
+            </div>
+          </li>
+          <li>
+            <span class="lp-num">05</span>
+            <div>
+              <h3>まちがえた語で弱点を潰す</h3>
+              <p>全ての単語が終わっても、まちがえた語だけでもう一度遊べます。おかいものは「たすけてリスト」から続けて、弱点を潰し込めます。</p>
+            </div>
+          </li>
+        </ol>
+        <p class="lp-note">練習で進みすぎたときは、各ゲームのマップで場所ごとの「記録を消す」を使います。管理画面では、クリア済みを10語・50語・全部からまとめて戻せます。</p>
+      </div>
+    </section>
 
-      <section id="ending" class="card hidden story"></section>
-    </main>
+    <section class="lp-section lp-section-alt" id="news">
+      <div class="lp-wrap lp-two">
+        <div>
+          <p class="lp-kicker dark">News</p>
+          <h2>新着情報</h2>
+          <ul class="lp-news">
+            <li>
+              <time datetime="2026-08-27">2026.08.27</time>
+              <div>
+                <h3>一般公開版を公開しました</h3>
+                <p>おかいものライブと、ともだちをたすける、の2ゲームです。ログインは不要です。</p>
+              </div>
+            </li>
+            <li>
+              <time datetime="2026-08-27">2026.08.27</time>
+              <div>
+                <h3>級は複数選択、漢字は3段階</h3>
+                <p>4級／3級／準2級／2級／準1級の「ぐらい」から選べます。漢字なし、簡単な漢字あり、漢字あり、を切り替えられます。</p>
+              </div>
+            </li>
+            <li>
+              <time datetime="2026-08-22">2026.08.22</time>
+              <div>
+                <h3>ご褒美と仲間の写真を、この端末だけに保存</h3>
+                <p>写真はサーバーに送りません。別の端末へ移すときは、記録のJSONに含めます。</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <aside class="lp-aside" id="board">
+          <p class="lp-kicker dark">Board</p>
+          <h2>掲示板</h2>
+          <p>使い方の質問や、家での進め方を共有する場所です。URLは後日掲載します。届き次第、下のボタンから開けます。</p>
+          <a class="lp-btn lp-btn-solid" id="board-link" href="#">掲示板を開く</a>
+          <p class="lp-note" id="board-note">いまは準備中です。</p>
+        </aside>
+      </div>
+    </section>
 
-    <script>
-      const stageTools = [
-        "ひかるシールド",
-        "ことばのつるぎ",
-        "ゆうきのブーツ",
-        "まもりのホイッスル",
-        "きずなのハンマー"
-      ];
+    <section class="lp-section" id="notes">
+      <div class="lp-wrap">
+        <p class="lp-kicker dark">Notes</p>
+        <h2>はじめに知っておくこと</h2>
+        <div class="lp-facts">
+          <article>
+            <h3>公式の英検問題ではありません</h3>
+            <p>級の表示は目安です。合格のためではなく、日常語を増やすためのサイトです。</p>
+          </article>
+          <article>
+            <h3>登録も決済もありません</h3>
+            <p>ログインやお支払いは不要です。学習記録・名前・写真は、この端末のブラウザにだけ残ります。サーバーには送りません。</p>
+          </article>
+          <article>
+            <h3>雰囲気はゲーム側で変わります</h3>
+            <p>かわいい／かっこいい／クールは、ゲーム画面の色とキャラ絵にだけ効きます。このトップの見た目は変わりません。</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-      const words = [
-        { word: "accept", jp: "受け入れる" },
-        { word: "achieve", jp: "達成する" },
-        { word: "advice", jp: "助言" },
-        { word: "allow", jp: "許可する" },
-        { word: "ancient", jp: "古代の" },
-        { word: "appear", jp: "現れる" },
-        { word: "argue", jp: "議論する" },
-        { word: "attend", jp: "出席する" },
-        { word: "aware", jp: "気づいている" },
-        { word: "benefit", jp: "利益" },
-        { word: "career", jp: "経歴" },
-        { word: "challenge", jp: "挑戦" },
-        { word: "choice", jp: "選択" },
-        { word: "compare", jp: "比較する" },
-        { word: "complete", jp: "完成させる" },
-        { word: "consider", jp: "よく考える" },
-        { word: "decide", jp: "決める" },
-        { word: "develop", jp: "発達させる" },
-        { word: "effort", jp: "努力" },
-        { word: "environment", jp: "環境" },
-        { word: "especially", jp: "特に" },
-        { word: "explain", jp: "説明する" },
-        { word: "favorite", jp: "お気に入りの" },
-        { word: "future", jp: "未来" },
-        { word: "increase", jp: "増加する" },
-        { word: "instead", jp: "その代わりに" },
-        { word: "local", jp: "地元の" },
-        { word: "manage", jp: "管理する" },
-        { word: "message", jp: "伝言" },
-        { word: "possible", jp: "可能な" },
-        { word: "prepare", jp: "準備する" },
-        { word: "protect", jp: "守る" },
-        { word: "realize", jp: "気づく" },
-        { word: "reduce", jp: "減らす" },
-        { word: "remember", jp: "覚えている" },
-        { word: "respect", jp: "尊敬する" },
-        { word: "return", jp: "戻る" },
-        { word: "situation", jp: "状況" },
-        { word: "support", jp: "支える" },
-        { word: "travel", jp: "旅行する" },
-      ];
+    <footer class="lp-footer">
+      <div class="lp-wrap lp-footer-row">
+        <div>
+          <p class="lp-brand-en">KIRAMEKI</p>
+          <p>きらめき英単語</p>
+        </div>
+        <nav>
+          <a href="#concept">コンセプト</a>
+          <a href="#safety">安全</a>
+          <a href="#games">ゲーム</a>
+          <a href="#howto">使い方</a>
+          <a href="#news">新着</a>
+          <a href="#board">掲示板</a>
+          <button type="button" class="js-open-adult">管理画面</button>
+        </nav>
+      </div>
+      <p class="lp-copy">登録なし・完全無料。記録はこの端末にだけ残ります。</p>
+    </footer>
+  </section>
 
-      const state = {
-        stage: 0,
-        currentQuestion: 0,
-        score: 0,
-        quizSet: [],
-        answered: false,
-        tools: []
-      };
+  <section id="adult" class="screen">
+    <header class="lp-header">
+      <div class="lp-brand">
+        <span class="lp-brand-en">KIRAMEKI</span>
+        <span class="lp-brand-ja">管理画面</span>
+      </div>
+      <button type="button" class="lp-nav-btn" id="adult-back">トップページ</button>
+    </header>
+    <div class="adult-page">
+      <h2>共通</h2>
+      <p class="sub">選んだ級の単語だけ出ます。公式の英検問題ではありません。複数の級を同時に選べます。</p>
+      <div class="field">
+        <span class="lab">難易度（複数可）</span>
+        <div class="seg" id="level-seg"></div>
+        <p class="sub" id="level-count" style="margin-top:8px"></p>
+      </div>
+      <div class="field toggle-row">
+        <input type="checkbox" id="abstract-toggle" />
+        <label for="abstract-toggle">抽象的な語も入れる</label>
+      </div>
+      <p class="sub">オフにすると、低学年が意味をとりにくい社会・学術の語を外します。</p>
 
-      const boardEl = document.getElementById("board");
-      const openingEl = document.getElementById("opening");
-      const statusCard = document.getElementById("statusCard");
-      const quizCard = document.getElementById("quizCard");
-      const stageTitle = document.getElementById("stageTitle");
-      const stageIntro = document.getElementById("stageIntro");
-      const scoreEl = document.getElementById("score");
-      const questionText = document.getElementById("questionText");
-      const choicesEl = document.getElementById("choices");
-      const answerReveal = document.getElementById("answerReveal");
-      const nextBtn = document.getElementById("nextBtn");
-      const inventoryEl = document.getElementById("inventory");
-      const endingEl = document.getElementById("ending");
+      <div class="field">
+        <span class="lab">漢字</span>
+        <div class="seg" id="kanji-seg"></div>
+      </div>
+      <div class="field">
+        <span class="lab">記録の書き出し</span>
+        <div class="seg" id="export-seg">
+          <label><input type="radio" name="autoExport" value="off" /> 手動（ボタンを押したときだけ）</label>
+          <label><input type="radio" name="autoExport" value="on" /> 自動（ステージ終了のたび）</label>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lab">雰囲気</span>
+        <div class="seg" id="taste-seg"></div>
+      </div>
+      <p class="sub">かわいい／かっこいい／クールで、キャラ・お店・冒険の場所が別物になります。トップページの見た目は変わりません。</p>
 
-      function shuffle(array) {
-        const clone = [...array];
-        for (let i = clone.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [clone[i], clone[j]] = [clone[j], clone[i]];
-        }
-        return clone;
-      }
+      <h2>ゲームの説明</h2>
+      <p class="sub">各ゲームを開いたときに、保護者向けの進め方を出します。子どもに渡す前に一度読んでください。</p>
+      <div class="field toggle-row">
+        <input type="checkbox" id="hide-shop-guide" />
+        <label for="hide-shop-guide">おかいものライブの説明を、次回から出さない</label>
+      </div>
+      <div class="field toggle-row">
+        <input type="checkbox" id="hide-rescue-guide" />
+        <label for="hide-rescue-guide">ともだちをたすけるの説明を、次回から出さない</label>
+      </div>
 
-      function renderBoard() {
-        boardEl.innerHTML = "";
-        for (let i = 0; i < 5; i++) {
-          const cell = document.createElement("div");
-          cell.className = "cell";
-          if (i < state.stage) cell.classList.add("cleared");
-          if (i === state.stage && state.stage < 5) cell.classList.add("active");
-          cell.innerHTML = `<strong>コマ ${i + 1}</strong><div class="tool">${stageTools[i]}</div>`;
-          boardEl.appendChild(cell);
-        }
-      }
+      <h2>キャラ図鑑</h2>
+      <p class="sub">いまの雰囲気の6人です。雰囲気を変えると、かわいい／かっこいい／クールで別の6人になります。名前と写真を入れて、主人公・友達・買い物仲間を選んでください。写真はこの端末のブラウザにだけ残ります。</p>
+      <div class="friend-slots" id="char-atlas"></div>
 
-      function renderInventory() {
-        inventoryEl.innerHTML = "";
-        if (state.tools.length === 0) {
-          inventoryEl.innerHTML = '<span class="small">まだどうぐはありません。</span>';
-          return;
-        }
-        state.tools.forEach((tool) => {
-          const chip = document.createElement("span");
-          chip.className = "chip";
-          chip.textContent = tool;
-          inventoryEl.appendChild(chip);
-        });
-      }
+      <h2>ご褒美</h2>
+      <div class="field toggle-row">
+        <input type="checkbox" id="prize-toggle" />
+        <label for="prize-toggle">ご褒美を使う</label>
+      </div>
+      <p class="sub">オフにすると、ゲームの結果にご褒美の写真も文言も出ません。オンのときは、全部終わる前から写真を出して目標にできます。</p>
+      <div id="prize-fields">
+      <h3 class="prize-sub">おかいもの</h3>
+      <div class="field">
+        <span class="lab">ご褒美の文言</span>
+        <input type="text" id="shop-prize-text" maxlength="80" />
+      </div>
+      <div class="field">
+        <span class="lab">ご褒美の画像</span>
+        <input type="file" id="shop-prize-file" accept="image/*" />
+        <div class="prize" id="shop-prize-box" style="margin-top:10px">
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ご褒美" style="display:none" />
+        </div>
+        <button class="btn ghost" type="button" id="shop-prize-clear">画像を消す</button>
+      </div>
 
-      function makeQuizSet() {
-        state.quizSet = shuffle(words).slice(0, 20).map((item) => {
-          const wrong = shuffle(words.filter((w) => w.word !== item.word))
-            .slice(0, 3)
-            .map((w) => w.jp);
-          const choices = shuffle([item.jp, ...wrong]);
-          return { ...item, choices };
-        });
-      }
+      <h3 class="prize-sub">冒険</h3>
+      <div class="field">
+        <span class="lab">ご褒美の文言</span>
+        <input type="text" id="rescue-prize-text" maxlength="80" />
+      </div>
+      <div class="field">
+        <span class="lab">ご褒美の画像</span>
+        <input type="file" id="rescue-prize-file" accept="image/*" />
+        <div class="prize" id="rescue-prize-box" style="margin-top:10px">
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ご褒美" style="display:none" />
+        </div>
+        <button class="btn ghost" type="button" id="rescue-prize-clear">画像を消す</button>
+      </div>
+      </div>
 
-      function showQuestion() {
-        const q = state.quizSet[state.currentQuestion];
-        state.answered = false;
-        answerReveal.textContent = "";
-        answerReveal.className = "result";
-        nextBtn.classList.add("hidden");
+      <h2>やり直し</h2>
+      <p class="sub">練習で進めた分を戻せます。まちがいリストはそのまま残し、クリア済みだけ消します。消した語は、どのゲームでもまた出ます。場所ごとの消し方は、各ゲームのマップにあります。</p>
+      <div class="btn-row" style="justify-content:flex-start">
+        <button class="btn ghost" type="button" id="undo-10">直近10語を戻す</button>
+        <button class="btn ghost" type="button" id="undo-50">直近50語を戻す</button>
+        <button class="btn ghost" type="button" id="undo-all">クリアを全部戻す</button>
+      </div>
+      <p class="sub" id="cleared-count" style="margin-top:8px"></p>
 
-        questionText.textContent = `Q${state.currentQuestion + 1}. ${q.word} のいみは？`;
-        choicesEl.innerHTML = "";
-
-        q.choices.forEach((choice) => {
-          const btn = document.createElement("button");
-          btn.className = "choice-btn";
-          btn.textContent = choice;
-          btn.addEventListener("click", () => answerQuestion(choice));
-          choicesEl.appendChild(btn);
-        });
-      }
-
-      function answerQuestion(choice) {
-        if (state.answered) return;
-        state.answered = true;
-        const q = state.quizSet[state.currentQuestion];
-        const isCorrect = choice === q.jp;
-        if (isCorrect) state.score += 1;
-        scoreEl.textContent = state.score;
-
-        answerReveal.textContent = `${isCorrect ? "せいかい！" : "ざんねん！"} 正解は「${q.jp}」`;
-        answerReveal.classList.add(isCorrect ? "ok" : "ng");
-        nextBtn.classList.remove("hidden");
-      }
-
-      function startStage() {
-        statusCard.classList.remove("hidden");
-        quizCard.classList.remove("hidden");
-        stageTitle.textContent = `コマ ${state.stage + 1} / 5`;
-        if (state.stage === 4) {
-          stageIntro.textContent = "黒沢くんが立ちはだかった！黒沢くん『あっちいけー！』";
-        } else {
-          stageIntro.textContent = "20問中15問以上正解して先に進もう。";
-        }
-
-        state.currentQuestion = 0;
-        state.score = 0;
-        scoreEl.textContent = 0;
-        makeQuizSet();
-        showQuestion();
-        renderBoard();
-      }
-
-      function finishStage() {
-        if (state.score >= 15) {
-          const tool = stageTools[state.stage];
-          state.tools.push(tool);
-          alert(`コマ ${state.stage + 1} クリア！\n${tool} を手に入れた！`);
-          state.stage += 1;
-          renderInventory();
-          renderBoard();
-          if (state.stage === 5) {
-            showEnding();
-          } else {
-            startStage();
-          }
-        } else {
-          alert(`コマ ${state.stage + 1} しっぱい… ${state.score}問正解。\n15問以上でクリアなので、もう一どチャレンジ！`);
-          startStage();
-        }
-      }
-
-      function showEnding() {
-        statusCard.classList.add("hidden");
-        quizCard.classList.add("hidden");
-        endingEl.classList.remove("hidden");
-        endingEl.innerHTML = `
-          <h2>エンディング</h2>
-          <p>Emilyは5つの道具を使って黒沢くんに立ち向かいました。</p>
-          <p>黒沢くんはぐったりして、<strong>「参ったー」</strong>と言って逃げていきました。</p>
-          <p>JoyoはEmilyににっこり笑って、<strong>「えみり、ありがとう！」</strong>と伝えました。</p>
-          <p>🎉 クリアおめでとう！</p>
-        `;
-      }
-
-      nextBtn.addEventListener("click", () => {
-        state.currentQuestion += 1;
-        if (state.currentQuestion >= 20) {
-          finishStage();
-        } else {
-          showQuestion();
-        }
-      });
-
-      document.getElementById("startBtn").addEventListener("click", () => {
-        openingEl.classList.add("hidden");
-        startStage();
-      });
-
-      renderBoard();
-      renderInventory();
-    </script>
-  </body>
+      <h2>記録</h2>
+      <p class="sub">管理画面・進捗・まちがいリスト・写真は、同じJSONに書き出して読み込めます。読み込むと今の内容と入れ替わります。</p>
+      <div class="btn-row" style="justify-content:flex-start">
+        <button class="btn" type="button" id="record-export">記録を書き出す</button>
+        <button class="btn ghost" type="button" id="record-import">記録を読み込む</button>
+      </div>
+      <input type="file" id="record-file" accept="application/json,.json" hidden />
+    </div>
+  </section>
+  <div class="toast" id="toast"></div>
+  <script src="words.js"></script>
+  <script src="world.js"></script>
+  <script src="app.js"></script>
+  <script src="chars.js"></script>
+  <script src="hub.js"></script>
+</body>
 </html>

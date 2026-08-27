@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja" data-taste="kawaii">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>おかいものライブ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="title" class="screen on">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+    </nav>
+    <div class="kid-hero">
+      <img src="img/illust-shop.jpg" alt="おかいものライブ" />
+      <div class="kid-hero-copy">
+        <p class="kid-kicker">おかいものライブ</p>
+        <h1>おつかいに いこう</h1>
+        <p class="kid-stat" id="title-level"></p>
+      </div>
+    </div>
+    <div class="kid-actions">
+      <button class="btn" id="go-map" type="button">マップ</button>
+      <button class="btn ghost" id="go-miss" type="button">たすけてリスト</button>
+      <button class="btn gold" id="save-xls" type="button">リストをほぞん</button>
+    </div>
+  </section>
+
+  <section id="map" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="map-back" type="button">ゲームの最初</button>
+      <div class="pill" id="map-stat">リボン 0</div>
+    </nav>
+    <h1 class="kid-h">おかいものマップ</h1>
+    <div class="map-grid" id="map-grid"></div>
+  </section>
+
+  <section id="pick" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="pick-back" type="button">マップ</button>
+      <div class="pill" id="pick-place">いちごのおか</div>
+    </nav>
+    <div class="quiz-banner" id="pick-banner"><img alt="" /></div>
+    <h1 class="kid-h">だれと いく？</h1>
+    <div class="char-grid" id="char-grid"></div>
+  </section>
+
+  <section id="quiz" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
+      <div class="pill" id="q-place">いちごのおか</div>
+      <div class="pill" id="q-buddy-pill">きらり</div>
+    </nav>
+    <div class="quiz-banner" id="quiz-banner"><img alt="" /></div>
+    <div class="gauge" id="gauge"></div>
+    <div class="stage-card">
+      <div class="english" id="english">ability</div>
+      <div class="choices" id="choices"></div>
+    </div>
+    <div class="buddy-row">
+      <div class="buddy-wrap" id="buddy-wrap"></div>
+    </div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="stage-card" style="text-align:center">
+      <div class="quiz-banner"><img src="img/scene-gift.jpg" alt="" /></div>
+      <div id="result-buddy" style="margin:8px 0"></div>
+      <div class="english" id="score-big">0</div>
+      <p class="sub" id="result-msg"></p>
+      <div class="prize">
+        <div class="prize-fallback" data-prize-fallback>🎁</div>
+        <img data-prize-img alt="ごほうび" style="display:none" />
+        <p data-prize-msg></p>
+      </div>
+      <div id="result-review"></div>
+      <div class="btn-row">
+        <button class="btn" id="next-round" type="button">つぎのおつかい</button>
+        <button class="btn ghost" id="result-map" type="button">マップ</button>
+        <button class="btn gold" id="result-save" type="button">リストをほぞん</button>
+        <button class="btn ghost" id="result-home" type="button">ゲームの最初</button>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="miss" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="miss-back" type="button">ゲームの最初</button>
+      <div class="pill" id="miss-count">0ご</div>
+    </nav>
+    <h1 class="kid-h">たすけてリスト</h1>
+    <div class="btn-row" style="margin: 0 0 12px">
+      <button class="btn" id="review-start" type="button">このリストで遊ぶ</button>
+      <button class="btn gold" id="miss-save" type="button">リストをほぞん</button>
+    </div>
+    <div class="stage-card" id="miss-list"></div>
+  </section>
+
+  <div class="story" id="story">
+    <div class="story-card">
+      <div class="quiz-banner"><img id="story-img" alt="" /></div>
+      <p id="story-text"></p>
+      <button class="btn" id="story-go" type="button">いく！</button>
+    </div>
+  </div>
+  <div class="react" id="react">
+    <div class="react-box">
+      <div class="burst" id="react-burst"></div>
+      <div class="react-en" id="react-en"></div>
+      <div class="react-ja" id="react-ja"></div>
+    </div>
+  </div>
+  <div class="guide" id="guide">
+    <div class="guide-card">
+      <img class="guide-photo" src="img/illust-shop.jpg" alt="" />
+      <p class="guide-kicker">おかいものライブ</p>
+      <h2>進め方</h2>
+      <ol>
+        <li>マップで場所を選びます。</li>
+        <li>一緒に行く仲間を1人選ぶと、短い物語のあと10問が始まります。</li>
+        <li>英語を見て、日本語を6つの中から選びます。紛らわしい引っかけはありません。</li>
+        <li>正解した語はクリアになり、ほかのゲームでも出ません。まちがえた語は「たすけてリスト」に残ります。</li>
+        <li>途中の「やめる」は、その回をクリアにしません。答えた分のまちがいだけ残ります。</li>
+      </ol>
+      <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
+      <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="words.js"></script>
+  <script src="world.js"></script>
+  <script src="app.js"></script>
+  <script src="chars.js"></script>
+  <script src="shop.js"></script>
+</body>
+</html>

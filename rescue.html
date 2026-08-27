@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja" data-taste="kawaii">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ともだちを たすける</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="opening" class="screen on">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+    </nav>
+    <div class="kid-hero">
+      <img src="img/illust-rescue.jpg" alt="ともだちをたすける" />
+      <div class="kid-hero-copy">
+        <p class="kid-kicker">ぼうけん</p>
+        <h1>ともだちを たすける</h1>
+        <p class="kid-stat" id="title-level"></p>
+      </div>
+    </div>
+    <div id="open-faces" class="buddy-row"></div>
+    <p class="kid-line" id="open-story"></p>
+    <h1 class="kid-h">ぼうけんマップ</h1>
+    <div class="path-map">
+      <svg id="path-svg" class="path-svg" aria-hidden="true">
+        <line class="path-svg-base" />
+        <line class="path-svg-done" />
+      </svg>
+      <div id="rescue-map"></div>
+    </div>
+    <p class="kid-hint" id="open-redo-hint"></p>
+    <div class="btn-row" id="ending-row" hidden>
+      <button class="btn" type="button" id="see-ending">おしまいを見る</button>
+    </div>
+  </section>
+
+  <section id="play" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" type="button" id="play-quit">やめる</button>
+      <div class="pill" id="stageTitle">もりのいりぐち</div>
+    </nav>
+    <div class="quiz-banner" id="play-banner"><img src="img/scene-forest.jpg" alt="" /></div>
+    <div class="gauge" id="gauge"></div>
+    <div class="stage-card">
+      <div class="english" id="english">word</div>
+      <div class="choices" id="choices"></div>
+    </div>
+    <div class="buddy-row" id="play-faces"></div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="stage-card" style="text-align:center">
+      <div class="quiz-banner"><img src="img/scene-forest.jpg" alt="" /></div>
+      <div id="result-faces" class="buddy-row"></div>
+      <div class="english" id="score-big">0</div>
+      <p class="sub" id="result-msg"></p>
+      <div id="result-review"></div>
+      <div class="prize">
+        <div class="prize-fallback" data-prize-fallback>🎁</div>
+        <img data-prize-img alt="ごほうび" style="display:none" />
+        <p data-prize-msg></p>
+      </div>
+      <div class="btn-row">
+        <button class="btn" type="button" id="next-stage">マップへ</button>
+        <button class="btn ghost" type="button" id="result-home">ゲームの最初</button>
+        <button class="btn gold" type="button" id="result-save">リストをほぞん</button>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="ending" class="screen">
+    <div class="stage-card" style="text-align:center;max-width:520px;margin:0 auto">
+      <div class="quiz-banner"><img src="img/illust-rescue.jpg" alt="" /></div>
+      <div id="end-faces" class="buddy-row"></div>
+      <p class="kid-line" id="end-story"></p>
+      <div class="prize">
+        <div class="prize-fallback" data-prize-fallback>🎁</div>
+        <img data-prize-img alt="ごほうび" style="display:none" />
+        <p data-prize-msg></p>
+      </div>
+      <div class="btn-row">
+        <button class="btn gold" type="button" id="end-save">リストをほぞん</button>
+        <button class="btn ghost" type="button" id="end-home">ゲームの最初</button>
+        <a class="btn" href="index.html">トップページ</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="react" id="react">
+    <div class="react-box">
+      <div class="burst" id="react-burst"></div>
+      <div class="react-en" id="react-en"></div>
+      <div class="react-ja" id="react-ja"></div>
+    </div>
+  </div>
+  <div class="guide" id="guide">
+    <div class="guide-card">
+      <img class="guide-photo" src="img/illust-rescue.jpg" alt="" />
+      <p class="guide-kicker">ともだちをたすける</p>
+      <h2>進め方</h2>
+      <ol>
+        <li>1本の道のうえにある5つの場所を、いまの場所から順に進みます。各場所は10問、選択肢は6つです。</li>
+        <li>7問以上正解すると、その場所のどうぐが手に入ります。</li>
+        <li>クリアした語はほかのゲームでも出ません。まちがえた語は共通のリストに残ります。</li>
+        <li>終わった場所の「記録を消す」で、そこからやり直せます。まちがいリストはそのままです。</li>
+        <li>途中の「やめる」は、その場所をクリアにしません。マップに戻ります。</li>
+      </ol>
+      <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
+      <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="words.js"></script>
+  <script src="world.js"></script>
+  <script src="app.js"></script>
+  <script src="chars.js"></script>
+  <script src="rescue.js"></script>
+</body>
+</html>
