@@ -47,8 +47,15 @@
     <div class="quiz-banner" id="play-banner"><img src="img/scene-forest.jpg" alt="" /></div>
     <div class="gauge" id="gauge"></div>
     <div class="stage-card">
-      <div class="english" id="english">word</div>
+      <div class="english-row">
+        <div class="english" id="english">word</div>
+        <button type="button" class="speak-btn" id="speak-word" aria-label="英単語を聞く">🔊</button>
+      </div>
       <div class="choices" id="choices"></div>
+      <p class="example-row">
+        <span class="example" id="example"></span>
+        <button type="button" class="speak-btn" id="speak-ex" aria-label="例文を聞く">🔊</button>
+      </p>
     </div>
     <div class="buddy-row" id="play-faces"></div>
   </section>
@@ -94,6 +101,7 @@
 
   <div class="react" id="react">
     <div class="react-box">
+      <div class="react-face" id="react-face"></div>
       <div class="burst" id="react-burst"></div>
       <div class="react-en" id="react-en"></div>
       <div class="react-ja" id="react-ja"></div>

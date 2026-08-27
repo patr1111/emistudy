@@ -19,8 +19,17 @@
   let pendingTrip = null;
   let roundToken = 0;
 
+  function placeRow(p) {
+    return shopPlaces()[p] || ["ばしょ", "⭐", "スター"];
+  }
+  function placeMark(p) {
+    return quiz && quiz.review ? "💌" : placeRow(p)[1];
+  }
+  function placeGet(p) {
+    return quiz && quiz.review ? "スター" : (placeRow(p)[2] || "アイテム");
+  }
   function pl(p) {
-    const row = shopPlaces()[p] || ["ばしょ", "🛒"];
+    const row = placeRow(p);
     return row[1] + " " + row[0];
   }
   function show(id) {
@@ -47,7 +56,7 @@
       const el = document.createElement("button");
       el.type = "button";
       el.className = "place" + (p > open ? " lock" : "") + (p === open ? " now" : "") + (fullyDone ? " done" : "");
-      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' /><div class='place-cap'><div class='nm'>" + (shopPlaces()[p] ? shopPlaces()[p][0] : "ばしょ") + "</div><div class='st'>" + "●".repeat(doneRounds) + "○".repeat(Math.max(0, need - doneRounds)) + "</div></div>";
+      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' /><div class='place-cap'><div class='nm'>" + placeRow(p)[0] + "</div><div class='st'>" + "●".repeat(doneRounds) + "○".repeat(Math.max(0, need - doneRounds)) + "</div></div>";
       if (doneN > 0) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
@@ -110,6 +119,7 @@
     const review = quiz.review;
     roundToken += 1;
     quiz = null;
+    K.setSpeakText("", "");
     document.getElementById("react").className = "react";
     if (review) {
       renderMiss();
@@ -121,7 +131,7 @@
   }
 
   function renderGauge() {
-    const icon = quiz.review ? "💌" : (shopPlaces()[quiz.place] ? shopPlaces()[quiz.place][1] : "🛒");
+    const icon = placeMark(quiz.place);
     const g = document.getElementById("gauge");
     g.innerHTML = "";
     for (let i = 0; i < quiz.items.length; i++) {
@@ -131,7 +141,7 @@
         d.textContent = quiz.log[i].ok ? icon : "💧";
       } else {
         d.className = "gdot" + (i === quiz.i ? " on" : "");
-        d.textContent = i === quiz.i ? "🛒" : "";
+        d.textContent = i === quiz.i ? icon : "";
       }
       g.appendChild(d);
     }
@@ -142,10 +152,7 @@
     wrap.className = "buddy-wrap " + (mood || "");
     wrap.innerHTML = await C.faceHtml(quiz.buddy, mood || "normal", 120)
       + "<div class='buddy-name' id='buddy-line'></div>";
-    const line = mood === "happy" ? nm(quiz.buddy) + "、元気いっぱい！"
-      : mood === "sad" ? nm(quiz.buddy) + "、悲しい…"
-      : nm(quiz.buddy) + "と お買い物";
-    document.getElementById("buddy-line").textContent = line;
+    document.getElementById("buddy-line").textContent = nm(quiz.buddy) + "と お買い物";
   }
 
   function renderQuestion() {
@@ -157,6 +164,9 @@
     renderGauge();
     setBuddyMood("normal");
     document.getElementById("english").textContent = w.en;
+    const ex = document.getElementById("example");
+    if (ex) ex.innerHTML = K.exampleHtml(w);
+    K.setSpeakText(w.en, w.ex || "");
     const box = document.getElementById("choices");
     box.innerHTML = "";
     K.pickChoices(w, WORDS, CHOICES).forEach((opt) => {
@@ -170,9 +180,13 @@
     });
   }
 
-  function flash(ok, w) {
+  async function flash(ok, w) {
     const el = document.getElementById("react");
-    document.getElementById("react-burst").textContent = ok ? "○ せいかい" : "× まちがい";
+    const face = document.getElementById("react-face");
+    if (face) face.innerHTML = await C.faceHtml(quiz.buddy, ok ? "happy" : "sad", 160);
+    document.getElementById("react-burst").textContent = ok
+      ? placeMark(quiz.place) + " " + placeGet(quiz.place) + "をゲット！"
+      : "";
     document.getElementById("react-en").textContent = w.en;
     document.getElementById("react-ja").innerHTML = (ok ? "" : "正解は<br>") + K.jaHtml(w);
     el.className = "react on " + (ok ? "ok" : "ng");
@@ -180,7 +194,7 @@
     setTimeout(() => { el.className = "react"; }, t.flash);
   }
 
-  function onChoose(btn, opt, w) {
+  async function onChoose(btn, opt, w) {
     const ok = opt.en === w.en;
     const token = quiz.token;
     document.querySelectorAll(".choice").forEach((el) => {
@@ -192,7 +206,7 @@
     quiz.log.push({ en: w.en, w: w, ok: ok });
     renderGauge();
     setBuddyMood(ok ? "happy" : "sad");
-    flash(ok, w);
+    await flash(ok, w);
     const t = K.flashTimes(ok);
     setTimeout(() => {
       if (!quiz || quiz.token !== token) return;
@@ -214,7 +228,7 @@
     document.getElementById("result-buddy").innerHTML =
       await C.faceHtml(quiz.buddy, okN >= 7 ? "happy" : "sad", 100)
       + "<div class='buddy-name'>" + nm(quiz.buddy) + "</div>";
-    const ico = shopPlaces()[quiz.place] ? shopPlaces()[quiz.place][1] : "○";
+    const ico = placeMark(quiz.place);
     document.getElementById("score-big").textContent = ico.repeat(okN);
     document.getElementById("score-big").style.fontSize = "1.6rem";
     document.getElementById("result-msg").textContent = okN + "もん できたよ。";
@@ -275,6 +289,8 @@
       if (!rows.length) { K.toast("まだ まちがいは ないよ"); return; }
       openPick(0, rows);
     });
+    K.bindSpeakButtons();
+    C.preloadMoods();
     K.bindGuide("shop");
   }
   boot();

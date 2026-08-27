@@ -140,16 +140,17 @@
     document.getElementById(boxId).innerHTML = html;
   }
   function renderGauge() {
+    const mark = (placeAt(state.stage).mark) || "★";
     const g = document.getElementById("gauge");
     g.innerHTML = "";
     for (let i = 0; i < TOTAL; i++) {
       const d = document.createElement("div");
       if (quiz && i < quiz.log.length) {
-        d.className = "gdot on" + (quiz.log[i].ok ? "" : "bad");
-        d.textContent = quiz.log[i].ok ? "★" : "💧";
+        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad");
+        d.textContent = quiz.log[i].ok ? mark : "💧";
       } else {
         d.className = "gdot" + (quiz && i === quiz.i ? " on" : "");
-        d.textContent = quiz && i === quiz.i ? "▶" : "";
+        d.textContent = quiz && i === quiz.i ? mark : "";
       }
       g.appendChild(d);
     }
@@ -157,6 +158,9 @@
   function renderQuestion() {
     const w = quiz.items[quiz.i];
     document.getElementById("english").textContent = w.en;
+    const ex = document.getElementById("example");
+    if (ex) ex.innerHTML = K.exampleHtml(w);
+    K.setSpeakText(w.en, w.ex || "");
     const playBanner = document.querySelector("#play-banner img");
     if (playBanner) playBanner.src = "img/" + placeAt(state.stage).scene + ".jpg";
     renderGauge();
@@ -172,16 +176,26 @@
       box.appendChild(b);
     });
   }
-  function flash(ok, w) {
+  async function flash(ok, w) {
     const el = document.getElementById("react");
-    document.getElementById("react-burst").textContent = ok ? "○ せいかい" : "× まちがい";
+    const face = document.getElementById("react-face");
+    if (face) {
+      face.innerHTML =
+        await C.faceHtml(player(), ok ? "happy" : "sad", 140) +
+        await C.faceHtml(friend(), ok ? "happy" : "sad", 140);
+    }
+    const cheers = W.rescueCheers || ["その調子！", "いい感じ！"];
+    document.getElementById("react-burst").textContent = ok
+      ? cheers[Math.floor(Math.random() * cheers.length)]
+      : "";
     document.getElementById("react-en").textContent = w.en;
     document.getElementById("react-ja").innerHTML = (ok ? "" : "正解は<br>") + K.jaHtml(w);
     el.className = "react on " + (ok ? "ok" : "ng");
     const t = K.flashTimes(ok);
     setTimeout(() => { el.className = "react"; }, t.flash);
   }
-  function onChoose(btn, opt, w) {
+
+  async function onChoose(btn, opt, w) {
     const ok = opt.en === w.en;
     const token = quiz.token;
     document.querySelectorAll(".choice").forEach((el) => {
@@ -193,7 +207,7 @@
     K.recordAnswer(w.en, ok);
     quiz.log.push({ en: w.en, w: w, ok: ok });
     renderGauge();
-    flash(ok, w);
+    await flash(ok, w);
     const t = K.flashTimes(ok);
     setTimeout(() => {
       if (!quiz || quiz.token !== token) return;
@@ -204,6 +218,7 @@
   }
   function goMap() {
     quiz = null;
+    K.setSpeakText("", "");
     document.getElementById("react").className = "react";
     renderMap();
     show("opening");
@@ -237,7 +252,7 @@
     persist();
     K.maybeAutoExport();
     await renderFaces("result-faces");
-    document.getElementById("score-big").textContent = "★".repeat(okN);
+    document.getElementById("score-big").textContent = (place.mark || "★").repeat(okN);
     document.getElementById("score-big").style.fontSize = "1.6rem";
     document.getElementById("result-msg").textContent = msg;
     document.getElementById("result-review").innerHTML = quiz.log.map((x) =>
@@ -297,6 +312,8 @@
     window.addEventListener("resize", layoutPath);
     const guideGo = document.getElementById("guide-go");
     if (guideGo) guideGo.addEventListener("click", () => setTimeout(layoutPath, 40));
+    K.bindSpeakButtons();
+    C.preloadMoods();
     K.bindGuide("rescue");
   }
   boot();

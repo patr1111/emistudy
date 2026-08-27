@@ -42,7 +42,7 @@
     names: Object.assign({}, DEFAULT_NAMES)
   };
 
-  const OK_FLASH = 1400, NG_FLASH = 3600, OK_WAIT = 1600, NG_WAIT = 4000;
+  const FLASH = 3600, WAIT = 4000;
 
   function today() {
     const d = new Date(), z = (n) => String(n).padStart(2, "0");
@@ -407,6 +407,84 @@
   function jaLines(w) { return [sense(w, 1), sense(w, 2)].filter(Boolean); }
   function jaText(w) { return jaLines(w).join("\n"); }
   function jaHtml(w) { return jaLines(w).map(esc).join("<br>"); }
+  function exampleHtml(w) {
+    const ex = (w && w.ex) ? String(w.ex) : "";
+    if (!ex) return "";
+    const word = (w.en || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (!word) return esc(ex);
+    return esc(ex).replace(new RegExp("(" + word + ")", "ig"), "<b>$1</b>");
+  }
+  function canSpeak() {
+    return !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+  }
+  let speakToken = 0;
+  function stopSpeak() {
+    speakToken += 1;
+    if (canSpeak()) speechSynthesis.cancel();
+  }
+  function pickEnVoice() {
+    if (!canSpeak()) return null;
+    const voices = speechSynthesis.getVoices() || [];
+    return voices.find((v) => v.lang === "en-US")
+      || voices.find((v) => (v.lang || "").toLowerCase().indexOf("en-us") === 0)
+      || voices.find((v) => (v.lang || "").toLowerCase().indexOf("en") === 0)
+      || null;
+  }
+  function speakEnglish(text) {
+    const t = String(text || "").trim();
+    if (!t) return;
+    if (!canSpeak()) {
+      toast("この端末では音声が使えません");
+      return;
+    }
+    stopSpeak();
+    const token = speakToken;
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "en-US";
+    u.rate = 1;
+    u.pitch = 1;
+    const voice = pickEnVoice();
+    if (voice) u.voice = voice;
+    // Chrome は cancel 直後の speak を落とすことがあるので、少し遅らせる
+    setTimeout(() => {
+      if (token !== speakToken) return;
+      speechSynthesis.speak(u);
+    }, 40);
+  }
+  function bindSpeakButtons() {
+    const ok = canSpeak();
+    if (ok) {
+      speechSynthesis.getVoices();
+      if (typeof speechSynthesis.onvoiceschanged !== "undefined") {
+        speechSynthesis.onvoiceschanged = function () { speechSynthesis.getVoices(); };
+      }
+    }
+    ["speak-word", "speak-ex"].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      if (!ok) {
+        btn.disabled = true;
+        btn.title = "この端末では音声が使えません";
+        btn.setAttribute("aria-disabled", "true");
+        return;
+      }
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        speakEnglish(btn.getAttribute("data-text") || "");
+      });
+    });
+  }
+  function setSpeakText(word, example) {
+    stopSpeak();
+    const wordBtn = document.getElementById("speak-word");
+    const exBtn = document.getElementById("speak-ex");
+    if (wordBtn) wordBtn.setAttribute("data-text", word || "");
+    if (exBtn) {
+      exBtn.setAttribute("data-text", example || "");
+      exBtn.hidden = !example;
+    }
+  }
   function choiceHtml(w) {
     const a = esc(sense(w, 1) || w.en);
     const b = sense(w, 2);
@@ -517,7 +595,7 @@
     downloadMissExcel();
   }
   function flashTimes(ok) {
-    return ok ? { flash: OK_FLASH, wait: OK_WAIT } : { flash: NG_FLASH, wait: NG_WAIT };
+    return { flash: FLASH, wait: WAIT };
   }
   function showPrize(box, allDone, game) {
     if (!box) return;
@@ -579,7 +657,8 @@
     filteredWords, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
     unClearEns, unClearPlace, unClearLast, resetCleared,
-    sense, jaLines, jaText, jaHtml, choiceHtml, pickChoices,
+    sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
+    canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, downloadMissExcel,
     exportBackup, importBackupText, maybeAutoExport, flashTimes, showPrize, bindGuide
   };

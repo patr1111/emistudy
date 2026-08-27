@@ -87,6 +87,25 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
   box-shadow: 0 10px 0 var(--shadow); position: relative;
 }
 .english { text-align: center; font-size: 2.35rem; font-weight: 800; color: var(--ribbon); margin: 6px 0 12px; }
+.english-row, .example-row {
+  display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+}
+.english-row { margin-bottom: 4px; }
+.english-row .english { margin: 6px 0; }
+.example-row { margin: 12px 4px 0; }
+.example {
+  margin: 0; text-align: center; font-weight: 800; font-size: 1.05rem;
+  line-height: 1.5; color: var(--ink); opacity: 0.88;
+}
+.example b { color: var(--ribbon); font-weight: 800; }
+.speak-btn {
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid var(--choice-border); background: #fff; color: var(--ink);
+  box-shadow: 0 3px 0 var(--shadow); font-size: 1.15rem; line-height: 1;
+  cursor: pointer; padding: 0; touch-action: manipulation;
+}
+.speak-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow); }
+.speak-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 .choices { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .choices.four { grid-template-columns: 1fr 1fr; }
 .choice {
@@ -227,8 +246,8 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
   width: 88px; height: 88px; object-fit: cover; border-radius: 50%;
   border: 3px solid var(--choice-border);
 }
-img.face.mood-happy { filter: saturate(1.12) brightness(1.06); }
-img.face.mood-sad { filter: saturate(0.65) brightness(0.92); }
+img.face.mood-happy { filter: saturate(1.25) brightness(1.08); }
+img.face.mood-sad { filter: saturate(0.55) brightness(0.88) grayscale(0.15); }
 .buddy-row { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin-top: 12px; min-height: 140px; }
 .buddy-wrap { text-align: center; }
 .buddy-wrap.happy svg, .buddy-wrap.happy img { animation: bounce 0.45s ease; }
@@ -296,14 +315,25 @@ img.face.mood-sad { filter: saturate(0.65) brightness(0.92); }
   font-size: 4rem; box-shadow: 0 8px 0 var(--shadow);
 }
 .prize p { margin-top: 10px; font-weight: 800; font-size: 1.05rem; line-height: 1.55; }
-.react { pointer-events: none; }
-.react-box { text-align: center; animation: pop 0.45s ease; }
-.react .burst { font-size: 3.4rem; font-weight: 800; text-shadow: 0 6px 0 rgba(0,0,0,0.08); }
-.react-en { font-size: 2.1rem; font-weight: 800; margin-top: 6px; }
-.react-ja { font-size: 1.25rem; font-weight: 800; margin-top: 2px; line-height: 1.45; white-space: pre-line; }
-.react.ok { background: rgba(80, 220, 140, 0.88); }
-.react.ng { background: rgba(255, 230, 236, 0.92); }
-.react.ok .burst, .react.ok .react-en, .react.ok .react-ja { color: #0f6b38; }
+.react { pointer-events: none; z-index: 40; }
+.react-box {
+  background: #fff; border-radius: 28px; padding: 20px 16px 22px;
+  max-width: 440px; width: min(92vw, 440px); text-align: center;
+  animation: pop 0.45s ease; box-shadow: 0 12px 0 rgba(0,0,0,0.14);
+}
+.react-face { display: flex; justify-content: center; gap: 12px; margin-bottom: 10px; min-height: 168px; }
+.react-face img.face {
+  width: 168px; height: 168px; object-fit: cover; border-radius: 50%;
+  border: 5px solid var(--choice-border); background: #fff8f0;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+}
+.react.ng .burst:empty { display: none; }
+.react .burst { font-size: 2.4rem; font-weight: 800; text-shadow: none; color: var(--ribbon); }
+.react-en { font-size: 2.1rem; font-weight: 800; margin-top: 6px; color: var(--ink); }
+.react-ja { font-size: 1.25rem; font-weight: 800; margin-top: 2px; line-height: 1.45; white-space: pre-line; color: var(--ink); }
+.react.ok { background: rgba(20, 110, 70, 0.92); }
+.react.ng { background: rgba(40, 18, 28, 0.78); }
+.react.ok .burst { color: #0f6b38; }
 .react.ng .burst, .react.ng .react-en, .react.ng .react-ja { color: #d81b60; }
 .board { display: grid; grid-template-columns: repeat(5, minmax(70px, 1fr)); gap: 10px; }
 .cell {
@@ -330,6 +360,7 @@ img.face.mood-sad { filter: saturate(0.65) brightness(0.92); }
   .choices { grid-template-columns: 1fr 1fr; }
   .map-grid, .char-grid, .game-grid { grid-template-columns: 1fr 1fr; }
   .english { font-size: 1.8rem; }
+  .example { font-size: 0.95rem; }
   .board { grid-template-columns: repeat(5, 1fr); }
 }
 
