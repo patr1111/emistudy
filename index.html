@@ -159,7 +159,7 @@
             <span class="lp-num">04</span>
             <div>
               <h3>記録を残す</h3>
-              <p>日々の進捗はブラウザに保存されます。別のパソコンへ移すときは、管理画面からJSONを書き出して読み込みます。</p>
+              <p>日々の進捗はブラウザに保存されます。別のパソコンへ移すときは、管理画面からJSONを書き出して読み込みます。学習記録と設定のみ引き継がれ、設定した画像は含まれません。</p>
             </div>
           </li>
           <li>
@@ -205,7 +205,7 @@
               <time datetime="2026-08-22">2026.08.22</time>
               <div>
                 <h3>ご褒美と仲間の写真を、この端末だけに保存</h3>
-                <p>写真はサーバーに送りません。別の端末へ移すときは、記録のJSONに含めます。</p>
+                <p>写真はサーバーに送りません。記録のJSONには含まれません。この端末のブラウザにだけ残ります。</p>
               </div>
             </li>
           </ul>
@@ -367,11 +367,12 @@
       <p class="sub" id="cleared-count" style="margin-top:8px"></p>
 
       <h2>記録</h2>
-      <p class="sub">管理画面・進捗・まちがいリスト・写真は、同じJSONに書き出して読み込めます。読み込むと今の内容と入れ替わります。</p>
+      <p class="sub">管理画面・進捗・まちがいリストをJSONに書き出して読み込めます。読み込むと今の学習記録と設定が入れ替わります。</p>
       <div class="btn-row" style="justify-content:flex-start">
         <button class="btn" type="button" id="record-export">記録を書き出す</button>
         <button class="btn ghost" type="button" id="record-import">記録を読み込む</button>
       </div>
+      <p class="sub">※学習記録と設定のみ保存・引き継ぎされます。設定した画像は引き継がれません。</p>
       <input type="file" id="record-file" accept="application/json,.json" hidden />
     </div>
   </section>

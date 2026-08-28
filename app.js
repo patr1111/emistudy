@@ -106,7 +106,7 @@
     { id: "battle", title: "パパやママと戦おう", href: "battle.html" }
   ];
   const GAME_BLANKS = { shop: blankShop, rescue: blankRescue };
-  const CORE_KEYS = ["settings", "progress"];
+  const CORE_KEYS = ["settings", "progress", "imageIds"];
   function mergeAnswers() {
     const out = {};
     Array.from(arguments).forEach((src) => {
@@ -138,7 +138,8 @@
       settings: normalizeSettings({}),
       progress: blankProgress(),
       shop: blankShop(),
-      rescue: blankRescue()
+      rescue: blankRescue(),
+      imageIds: {}
     };
   }
   function readAll() {
@@ -167,7 +168,8 @@
         settings: normalizeSettings(s.settings),
         progress: progress,
         shop: shop,
-        rescue: rescue
+        rescue: rescue,
+        imageIds: sanitizeImageIds(s.imageIds)
       };
       Object.keys(s).forEach((k) => {
         if (CORE_KEYS.indexOf(k) >= 0 || GAME_BLANKS[k]) return;
@@ -183,10 +185,11 @@
       settings: data.settings,
       progress: data.progress,
       shop: data.shop,
-      rescue: data.rescue
+      rescue: data.rescue,
+      imageIds: sanitizeImageIds((data && data.imageIds) || {})
     };
     Object.keys(data || {}).forEach((k) => {
-      if (out[k] === undefined) out[k] = data[k];
+      if (out[k] === undefined && k !== "images") out[k] = data[k];
     });
     localStorage.setItem(STORE_KEY, JSON.stringify(out));
   }
@@ -237,102 +240,247 @@
     }).join("・");
   }
 
+  const IMG_LS = STORE_KEY + "-img";
+  const objectUrls = {};
+
+  function sanitizeImageIds(raw) {
+    const out = {};
+    if (!raw || typeof raw !== "object") return out;
+    Object.keys(raw).forEach((k) => {
+      const v = raw[k];
+      if (typeof v !== "string" || !v) return;
+      if (v.indexOf("data:") === 0 || v.length > 200) return;
+      out[k] = v;
+    });
+    return out;
+  }
+  function readImageIds() {
+    return sanitizeImageIds(readAll().imageIds);
+  }
+  function writeImageIds(ids) {
+    const all = readAll();
+    all.imageIds = sanitizeImageIds(ids);
+    writeAll(all);
+  }
+  function resolveImageId(key) {
+    const ids = readImageIds();
+    if (ids[key]) return ids[key];
+    if (key === "prize-shop" && ids.prize) return ids.prize;
+    return "";
+  }
+  function lsImages() {
+    try { return JSON.parse(localStorage.getItem(IMG_LS) || "{}"); } catch (e) { return {}; }
+  }
+  function isDataUrl(v) {
+    return typeof v === "string" && v.indexOf("data:") === 0;
+  }
+  function dataUrlToBlob(dataUrl) {
+    const m = String(dataUrl).match(/^data:([^;]+)(;base64)?,([\s\S]*)$/);
+    if (!m) return null;
+    const mime = m[1] || "image/jpeg";
+    const isB64 = !!m[2];
+    const data = m[3] || "";
+    try {
+      if (isB64) {
+        const bin = atob(data);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: mime });
+      }
+      return new Blob([decodeURIComponent(data)], { type: mime });
+    } catch (e) {
+      return null;
+    }
+  }
+  function toBlob(val) {
+    if (!val) return null;
+    if (typeof Blob !== "undefined" && val instanceof Blob) return val;
+    if (isDataUrl(val)) return dataUrlToBlob(val);
+    return null;
+  }
+  function blobUrl(key, blob) {
+    if (objectUrls[key]) {
+      URL.revokeObjectURL(objectUrls[key]);
+      delete objectUrls[key];
+    }
+    if (!blob) return "";
+    const url = URL.createObjectURL(blob);
+    objectUrls[key] = url;
+    return url;
+  }
   function openDb() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(IMG_DB, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(IMG_STORE);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IMG_STORE)) db.createObjectStore(IMG_STORE);
+      };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
   }
-  const IMG_LS = STORE_KEY + "-img";
-  function lsImages() {
-    try { return JSON.parse(localStorage.getItem(IMG_LS) || "{}"); } catch (e) { return {}; }
-  }
-  function writeLsImages(map) { localStorage.setItem(IMG_LS, JSON.stringify(map || {})); }
-  async function setImage(key, dataUrl) {
-    const map = lsImages();
-    if (dataUrl) map[key] = dataUrl; else delete map[key];
-    writeLsImages(map);
+  async function withStore(mode, fn) {
+    const db = await openDb();
     try {
-      const db = await openDb();
-      await new Promise((resolve, reject) => {
-        const tx = db.transaction(IMG_STORE, "readwrite");
-        if (dataUrl) tx.objectStore(IMG_STORE).put(dataUrl, key);
-        else tx.objectStore(IMG_STORE).delete(key);
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IMG_STORE, mode);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
+        fn(tx.objectStore(IMG_STORE), tx);
       });
+    } finally {
       db.close();
-    } catch (e) { /* localStorage 側は残る */ }
+    }
   }
-  async function getImage(key) {
-    try {
-      const db = await openDb();
-      const val = await new Promise((resolve, reject) => {
-        const tx = db.transaction(IMG_STORE, "readonly");
-        const q = tx.objectStore(IMG_STORE).get(key);
-        q.onsuccess = () => resolve(q.result || "");
-        q.onerror = () => reject(q.error);
-      });
-      db.close();
-      if (val) return val;
-    } catch (e) { /* fall through */ }
-    const map = lsImages();
-    if (key === "prize-shop" && !map[key] && map.prize) return map.prize;
-    return map[key] || "";
+  async function idbGet(id) {
+    let val = "";
+    await withStore("readonly", (store) => {
+      const q = store.get(id);
+      q.onsuccess = () => { val = q.result || ""; };
+    });
+    return val;
   }
-  async function getAllImages() {
-    const out = lsImages();
-    try {
-      const db = await openDb();
-      await new Promise((resolve, reject) => {
-        const tx = db.transaction(IMG_STORE, "readonly");
-        const q = tx.objectStore(IMG_STORE).openCursor();
-        q.onsuccess = (ev) => {
-          const c = ev.target.result;
-          if (c) { out[c.key] = c.value; c.continue(); }
-          else resolve();
-        };
-        q.onerror = () => reject(q.error);
-      });
-      db.close();
-    } catch (e) { /* localStorage */ }
+  async function idbPut(id, blob) {
+    await withStore("readwrite", (store) => { store.put(blob, id); });
+  }
+  async function idbDelete(id) {
+    await withStore("readwrite", (store) => { store.delete(id); });
+  }
+  async function idbGetAll() {
+    const out = {};
+    await withStore("readonly", (store) => {
+      const q = store.openCursor();
+      q.onsuccess = (ev) => {
+        const c = ev.target.result;
+        if (c) { out[c.key] = c.value; c.continue(); }
+      };
+    });
     return out;
   }
-  async function setAllImages(map) {
-    writeLsImages(map || {});
+  async function idbPutMany(entries) {
+    if (!entries.length) return;
+    await withStore("readwrite", (store) => {
+      entries.forEach((it) => { if (it && it.key && it.value) store.put(it.value, it.key); });
+    });
+  }
+
+  let migrateWait = null;
+  async function runImageMigrate() {
+    const lsMap = lsImages();
+    const ids = readImageIds();
+    const hasLs = Object.keys(lsMap).length > 0;
+    let idbMap = {};
     try {
-      const db = await openDb();
-      await new Promise((resolve, reject) => {
-        const tx = db.transaction(IMG_STORE, "readwrite");
-        const store = tx.objectStore(IMG_STORE);
-        store.clear();
-        Object.keys(map || {}).forEach((k) => { if (map[k]) store.put(map[k], k); });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+      idbMap = await idbGetAll();
+    } catch (e) {
+      if (!hasLs) return;
+    }
+    const toPut = [];
+    const take = (logicalKey, val) => {
+      const blob = toBlob(val);
+      if (!blob) return;
+      const id = ids[logicalKey] || logicalKey;
+      ids[logicalKey] = id;
+      toPut.push({ key: id, value: blob });
+    };
+    if (hasLs) {
+      Object.keys(lsMap).forEach((k) => {
+        const dest = (k === "prize" && !lsMap["prize-shop"] && !ids["prize-shop"]) ? "prize-shop" : k;
+        take(dest, lsMap[k]);
       });
-      db.close();
-    } catch (e) { /* localStorage に書いた */ }
+    }
+    Object.keys(idbMap).forEach((k) => {
+      const dest = (k === "prize" && !ids["prize-shop"] && !idbMap["prize-shop"]) ? "prize-shop" : k;
+      const val = idbMap[k];
+      if (isDataUrl(val)) take(dest, val);
+      else if (toBlob(val) && !ids[dest]) ids[dest] = dest === k ? k : dest;
+    });
+    if (toPut.length) await idbPutMany(toPut);
+    writeImageIds(ids);
+    if (hasLs) localStorage.removeItem(IMG_LS);
+  }
+  function migrateImagesOnce() {
+    if (!migrateWait) {
+      migrateWait = runImageMigrate().catch((e) => {
+        migrateWait = null;
+        throw e;
+      });
+    }
+    return migrateWait;
+  }
+
+  async function setImage(key, blobOrEmpty) {
+    try { await migrateImagesOnce(); } catch (e) { /* 続行 */ }
+    const all = readAll();
+    all.imageIds = readImageIds();
+    if (blobOrEmpty) {
+      const blob = toBlob(blobOrEmpty) || blobOrEmpty;
+      if (!(typeof Blob !== "undefined" && blob instanceof Blob)) return;
+      const id = all.imageIds[key] || key;
+      await idbPut(id, blob);
+      all.imageIds[key] = id;
+    } else {
+      const id = all.imageIds[key] || key;
+      try { await idbDelete(id); } catch (e) { /* 索引だけ消す */ }
+      if (key === "prize-shop") {
+        try { await idbDelete("prize"); } catch (e) { /* 旧キー */ }
+      }
+      delete all.imageIds[key];
+      if (key === "prize-shop") delete all.imageIds.prize;
+      blobUrl(key, null);
+    }
+    writeAll(all);
+  }
+  async function getImage(key) {
+    try { await migrateImagesOnce(); } catch (e) { /* 旧データへ */ }
+    const id = resolveImageId(key);
+    if (id) {
+      try {
+        const val = await idbGet(id);
+        const blob = toBlob(val);
+        if (blob) {
+          if (isDataUrl(val)) {
+            try { await idbPut(id, blob); } catch (e) { /* 次回再変換 */ }
+          }
+          return blobUrl(key, blob);
+        }
+      } catch (e) { /* fall through */ }
+    }
+    const map = lsImages();
+    const raw = map[key] || (key === "prize-shop" ? map.prize : "");
+    if (isDataUrl(raw)) {
+      const blob = dataUrlToBlob(raw);
+      if (blob) return blobUrl(key, blob);
+      return raw;
+    }
+    return "";
   }
   function shrinkFile(file, max = 480) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error);
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const scale = Math.min(1, max / Math.max(img.width, img.height));
-          const c = document.createElement("canvas");
-          c.width = Math.max(1, Math.round(img.width * scale));
-          c.height = Math.max(1, Math.round(img.height * scale));
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL("image/jpeg", 0.72));
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * scale));
+        c.height = Math.max(1, Math.round(img.height * scale));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        const finish = (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("blob"));
         };
-        img.onerror = () => reject(new Error("image"));
-        img.src = reader.result;
+        if (typeof c.toBlob === "function") {
+          c.toBlob(finish, "image/jpeg", 0.72);
+        } else {
+          finish(dataUrlToBlob(c.toDataURL("image/jpeg", 0.72)));
+        }
       };
-      reader.readAsDataURL(file);
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("image"));
+      };
+      img.src = url;
     });
   }
 
@@ -638,13 +786,22 @@
     toast("まちがいリストを保存したよ（" + rows.length + "語）");
   }
   async function exportBackup() {
+    try { await migrateImagesOnce(); } catch (e) { /* テキストだけ出す */ }
     const all = readAll();
-    const payload = Object.assign({}, all, {
+    const payload = {
       app: "kirameki-eigo",
-      v: 4,
+      v: 5,
       key: STORE_KEY,
       exportedAt: today(),
-      images: await getAllImages()
+      settings: all.settings,
+      progress: all.progress,
+      shop: all.shop,
+      rescue: all.rescue,
+      imageIds: sanitizeImageIds(all.imageIds)
+    };
+    Object.keys(all).forEach((k) => {
+      if (payload[k] !== undefined || k === "images") return;
+      payload[k] = all[k];
     });
     const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
     const a = document.createElement("a");
@@ -652,11 +809,13 @@
     a.download = "きらめきえいたんご_きろく_" + today() + ".json";
     a.click();
     URL.revokeObjectURL(a.href);
-    toast("記録ファイルを保存したよ（管理画面・写真も含む）");
+    toast("記録ファイルを保存したよ（学習記録と設定のみ）");
   }
   async function importBackupText(raw) {
     let data = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!data || typeof data !== "object") throw new Error("format");
+    try { await migrateImagesOnce(); } catch (e) { /* テキストだけ入れる */ }
+    const prevIds = readImageIds();
     const all = blankAll();
     all.settings = normalizeSettings(data.settings || {});
     if (data.progress) {
@@ -675,12 +834,13 @@
         stageEns: Array.isArray(data.rescue.stageEns) ? data.rescue.stageEns : []
       };
     }
+    if (data.imageIds) all.imageIds = sanitizeImageIds(data.imageIds);
+    else all.imageIds = prevIds;
     Object.keys(data).forEach((k) => {
-      if (["app", "v", "key", "exportedAt", "images", "settings", "progress", "shop", "rescue", "state"].indexOf(k) >= 0) return;
+      if (["app", "v", "key", "exportedAt", "images", "settings", "progress", "shop", "rescue", "state", "imageIds"].indexOf(k) >= 0) return;
       if (data[k] && typeof data[k] === "object") all[k] = data[k];
     });
     writeAll(all);
-    if (data.images) await setAllImages(data.images);
     applyTaste(all.settings.taste);
   }
   function maybeAutoExport() {
@@ -728,16 +888,25 @@
     const msg = box.querySelector("[data-prize-msg]");
     const key = game === "rescue" ? "prize-rescue" : "prize-shop";
     const text = game === "rescue" ? st.rescuePrizeText : st.shopPrizeText;
+    const showFallback = () => {
+      if (img) {
+        img.removeAttribute("src");
+        img.style.display = "none";
+      }
+      if (fallback) fallback.style.display = "grid";
+    };
     getImage(key).then((src) => {
       if (src && img) {
+        img.onload = () => {
+          img.style.display = "inline-block";
+          if (fallback) fallback.style.display = "none";
+        };
+        img.onerror = showFallback;
         img.src = src;
-        img.style.display = "inline-block";
-        if (fallback) fallback.style.display = "none";
       } else {
-        if (img) img.style.display = "none";
-        if (fallback) fallback.style.display = "grid";
+        showFallback();
       }
-    });
+    }).catch(showFallback);
     if (msg) {
       msg.innerHTML = allDone
         ? "全部できた！ご褒美をGETだよ！"
@@ -767,6 +936,7 @@
   }
 
   applyTaste(getSettings().taste);
+  migrateImagesOnce().catch(() => {});
 
   global.Kirameki = {
     STORE_KEY, ROUND, PLACE_SIZE, CHAR_IDS, CHAR_BY_TASTE, LEVELS, KANJI_MODES, TASTES, DEFAULT_SETTINGS, DEFAULT_NAMES, GAMES,

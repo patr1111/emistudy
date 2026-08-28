@@ -296,7 +296,7 @@
       const file = ev.target.files && ev.target.files[0];
       ev.target.value = "";
       if (!file) return;
-      if (!confirm("今の記録と管理画面の内容を消して、このファイルの内容に入れ替えます。よろしいですか？")) return;
+      if (!confirm("今の記録と管理画面の内容を消して、このファイルの内容に入れ替えます。設定した画像はファイルに含まれないため引き継がれません。よろしいですか？")) return;
       const reader = new FileReader();
       reader.onload = async () => {
         try {
