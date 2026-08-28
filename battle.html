@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja" data-taste="kawaii">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>パパやママと戦おう</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="title" class="screen on">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+    </nav>
+    <div class="kid-hero">
+      <img src="img/illust-battle.jpg" alt="パパやママと戦おう" />
+      <div class="kid-hero-copy">
+        <p class="kid-kicker">たいせん</p>
+        <h1>パパやママと たたかおう</h1>
+        <p class="kid-stat" id="title-level"></p>
+      </div>
+    </div>
+    <div id="lock-box" class="stage-card lock-box" hidden>
+      <h2>これはまだ遊べません</h2>
+      <p>ほかのゲームである程度すすめてから、できるようになります。</p>
+      <p class="sub" id="lock-count"></p>
+      <div class="btn-row">
+        <a class="btn" href="shop.html">おかいものライブ</a>
+        <a class="btn" href="rescue.html">ともだちをたすける</a>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+    <div id="start-box" class="kid-actions" hidden>
+      <button class="btn" id="go-modes" type="button">モードを選ぶ</button>
+    </div>
+  </section>
+
+  <section id="modes" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="modes-back" type="button">ゲームの最初</button>
+    </nav>
+    <h1 class="kid-h">モードを えらぶ</h1>
+    <p class="kid-line">こどもが さき。こうごに 5もんずつ。</p>
+    <div class="mode-grid" id="mode-grid"></div>
+  </section>
+
+  <section id="quiz" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
+      <div class="pill" id="q-mode">かんたん</div>
+    </nav>
+    <div class="turn-banner" id="turn-banner">いまは こどものばん</div>
+    <div class="vs-score" id="vs-score"></div>
+    <div class="quiz-banner"><img src="img/illust-battle.jpg" alt="" /></div>
+    <div class="gauge" id="gauge"></div>
+    <div class="stage-card">
+      <div class="english-row">
+        <div class="english" id="english">ability</div>
+        <button type="button" class="speak-btn" id="speak-word" aria-label="英単語を聞く">🔊</button>
+      </div>
+      <div class="choices" id="choices"></div>
+      <p class="example-row">
+        <span class="example" id="example"></span>
+        <button type="button" class="speak-btn" id="speak-ex" aria-label="例文を聞く">🔊</button>
+      </p>
+    </div>
+    <div class="buddy-row">
+      <div class="buddy-wrap" id="buddy-wrap"></div>
+    </div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="stage-card" style="text-align:center">
+      <div class="quiz-banner"><img src="img/illust-battle.jpg" alt="" /></div>
+      <div id="result-faces" class="buddy-row vs-faces"></div>
+      <div class="english" id="winner-line">ひきわけ</div>
+      <p class="sub" id="result-msg"></p>
+      <div class="vs-final" id="vs-final"></div>
+      <div id="result-review"></div>
+      <div class="btn-row">
+        <button class="btn" id="again" type="button">もういちど</button>
+        <button class="btn ghost" id="result-home" type="button">ゲームの最初</button>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="story" id="score-dlg">
+    <div class="story-card">
+      <p class="guide-kicker" style="padding:16px 18px 0">いまのてんすう</p>
+      <div class="vs-score vs-score-dlg" id="score-dlg-body"></div>
+      <button class="btn" id="score-go" type="button">つづける</button>
+    </div>
+  </div>
+  <div class="react" id="react">
+    <div class="react-box">
+      <div class="react-face" id="react-face"></div>
+      <div class="burst" id="react-burst"></div>
+      <div class="react-en" id="react-en"></div>
+      <div class="react-ja" id="react-ja"></div>
+    </div>
+  </div>
+  <div class="guide" id="guide">
+    <div class="guide-card">
+      <img class="guide-photo" src="img/illust-battle.jpg" alt="" />
+      <p class="guide-kicker">パパやママと戦おう</p>
+      <h2>進め方</h2>
+      <ol>
+        <li>ほかのゲームで10語以上すすめると遊べます。履歴が足りないときは、まだ遊べませんと出ます。</li>
+        <li>かんたんは正解してきた語、むずかしいはたすけてリスト、ふつうは半々です。</li>
+        <li>こどもが先で、親と交互に5問ずつ、合計10問です。英語を見て日本語を6つの中から選びます。</li>
+        <li>4問めと8問めのあと、いまの点数を確認します。最後に正答率でどちらが勝ったかを出します。</li>
+        <li>このゲームの正誤は、単語のクリアやたすけてリストには入りません。おかいものと冒険の進みはそのままです。</li>
+      </ol>
+      <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
+      <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="words.js"></script>
+  <script src="world.js"></script>
+  <script src="app.js"></script>
+  <script src="chars.js"></script>
+  <script src="battle.js"></script>
+</body>
+</html>

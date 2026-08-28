@@ -193,8 +193,7 @@
     document.getElementById("react-en").textContent = w.en;
     document.getElementById("react-ja").innerHTML = (ok ? "" : "正解は<br>") + K.jaHtml(w);
     el.className = "react on " + (ok ? "ok" : "ng");
-    const t = K.flashTimes(ok);
-    setTimeout(() => { el.className = "react"; }, t.flash);
+    await K.waitReact(K.flashTimes(ok).wait);
   }
 
   async function onChoose(btn, opt, w) {
@@ -210,13 +209,10 @@
     quiz.log.push({ en: w.en, w: w, ok: ok });
     renderGauge();
     await flash(ok, w);
-    const t = K.flashTimes(ok);
-    setTimeout(() => {
-      if (!quiz || quiz.token !== token) return;
-      quiz.i += 1;
-      if (quiz.i >= quiz.items.length) finishStage();
-      else renderQuestion();
-    }, t.wait);
+    if (!quiz || quiz.token !== token) return;
+    quiz.i += 1;
+    if (quiz.i >= quiz.items.length) finishStage();
+    else renderQuestion();
   }
   function goMap() {
     quiz = null;

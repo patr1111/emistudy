@@ -200,6 +200,7 @@
     document.getElementById("abstract-toggle").checked = !!st.abstract;
     document.getElementById("hide-shop-guide").checked = !!st.hideShopGuide;
     document.getElementById("hide-rescue-guide").checked = !!st.hideRescueGuide;
+    document.getElementById("hide-battle-guide").checked = !!st.hideBattleGuide;
     document.getElementById("prize-toggle").checked = st.prizeOn !== false;
     const prizeFields = document.getElementById("prize-fields");
     if (prizeFields) prizeFields.hidden = st.prizeOn === false;
@@ -223,6 +224,9 @@
     });
     document.getElementById("hide-rescue-guide").addEventListener("change", (e) => {
       K.saveSettings({ hideRescueGuide: e.target.checked });
+    });
+    document.getElementById("hide-battle-guide").addEventListener("change", (e) => {
+      K.saveSettings({ hideBattleGuide: e.target.checked });
     });
     document.getElementById("prize-toggle").addEventListener("change", (e) => {
       K.saveSettings({ prizeOn: e.target.checked });

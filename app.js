@@ -38,6 +38,7 @@
     rescuePrizeText: "全部終わったら、このご褒美がもらえるよ。",
     hideShopGuide: false,
     hideRescueGuide: false,
+    hideBattleGuide: false,
     prizeOn: true,
     names: Object.assign({}, DEFAULT_NAMES)
   };
@@ -101,7 +102,8 @@
   function blankRescue() { return { stage: 0, tools: [], stageEns: [] }; }
   const GAMES = [
     { id: "shop", title: "おかいものライブ", href: "shop.html" },
-    { id: "rescue", title: "ともだちをたすける", href: "rescue.html" }
+    { id: "rescue", title: "ともだちをたすける", href: "rescue.html" },
+    { id: "battle", title: "パパやママと戦おう", href: "battle.html" }
   ];
   const GAME_BLANKS = { shop: blankShop, rescue: blankRescue };
   const CORE_KEYS = ["settings", "progress"];
@@ -563,6 +565,62 @@
       })
       .sort((a, b) => b.wrong - a.wrong || a.en.localeCompare(b.en));
   }
+  function shuffleCopy(list) {
+    const a = (list || []).slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function seenWordItems() {
+    const answers = getProgress().answers || {};
+    return filteredWords().filter((w) => ((answers[w.en] || {}).seen || 0) > 0);
+  }
+  function clearedWordItems() {
+    const done = new Set(getProgress().clearedEns || []);
+    return filteredWords().filter((w) => done.has(w.en));
+  }
+  function missWordItems() {
+    const allowed = new Set(filteredWords().map((w) => w.en));
+    return missEntries().map((r) => r.w).filter((w) => w && allowed.has(w.en));
+  }
+  function battleStatus() {
+    const seen = seenWordItems();
+    const easy = clearedWordItems();
+    const hard = missWordItems();
+    const unique = new Set();
+    easy.forEach((w) => unique.add(w.en));
+    hard.forEach((w) => unique.add(w.en));
+    return {
+      seen: seen.length,
+      easy: easy.length,
+      hard: hard.length,
+      canPlay: seen.length >= ROUND,
+      canEasy: easy.length >= ROUND,
+      canHard: hard.length >= ROUND,
+      canNormal: easy.length >= 5 && hard.length >= 5 && unique.size >= ROUND
+    };
+  }
+  function pickBattleItems(mode) {
+    const easy = clearedWordItems();
+    const hard = missWordItems();
+    if (mode === "easy") return shuffleCopy(easy).slice(0, ROUND);
+    if (mode === "hard") return shuffleCopy(hard).slice(0, ROUND);
+    const easyPick = shuffleCopy(easy).slice(0, 5);
+    const used = new Set(easyPick.map((w) => w.en));
+    const hardPick = shuffleCopy(hard.filter((w) => !used.has(w.en))).slice(0, 5);
+    hardPick.forEach((w) => used.add(w.en));
+    const items = easyPick.concat(hardPick);
+    if (items.length < ROUND) {
+      shuffleCopy(easy.concat(hard)).forEach((w) => {
+        if (items.length >= ROUND || used.has(w.en)) return;
+        used.add(w.en);
+        items.push(w);
+      });
+    }
+    return shuffleCopy(items).slice(0, ROUND);
+  }
   function downloadMissExcel(rows) {
     rows = rows || missEntries();
     const cell = (v) => "<Cell><Data ss:Type=\"String\">" + esc(v) + "</Data></Cell>";
@@ -632,6 +690,31 @@
   function flashTimes(ok) {
     return { flash: FLASH, wait: WAIT };
   }
+  let reactWaitFinish = null;
+  function waitReact(ms) {
+    const el = document.getElementById("react");
+    if (reactWaitFinish) reactWaitFinish();
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        reactWaitFinish = null;
+        if (el) {
+          el.className = "react";
+          el.removeEventListener("click", onBg);
+        }
+        resolve();
+      };
+      const onBg = (ev) => {
+        if (ev.target.closest(".react-box")) return;
+        finish();
+      };
+      reactWaitFinish = finish;
+      if (el) el.addEventListener("click", onBg);
+      setTimeout(finish, ms);
+    });
+  }
   function showPrize(box, allDone, game) {
     if (!box) return;
     const st = getSettings();
@@ -665,7 +748,8 @@
   function bindGuide(game) {
     const el = document.getElementById("guide");
     if (!el) return;
-    const key = game === "shop" ? "hideShopGuide" : "hideRescueGuide";
+    const keys = { shop: "hideShopGuide", rescue: "hideRescueGuide", battle: "hideBattleGuide" };
+    const key = keys[game] || "hideShopGuide";
     const go = document.getElementById("guide-go");
     const skip = document.getElementById("guide-skip");
     if (getSettings()[key]) return;
@@ -695,6 +779,7 @@
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, downloadMissExcel,
-    exportBackup, importBackupText, maybeAutoExport, flashTimes, showPrize, bindGuide
+    seenWordItems, clearedWordItems, missWordItems, battleStatus, pickBattleItems,
+    exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, showPrize, bindGuide
   };
 })(window);
