@@ -2,11 +2,6 @@
   const K = window.Kirameki;
   const C = window.KiramekiChars;
   const CHOICES = 6;
-  const MODE_META = {
-    easy: { name: "かんたん", desc: "いままで せいかいした ことば" },
-    normal: { name: "ふつう", desc: "せいかいと まちがいを はんはん" },
-    hard: { name: "むずかしい", desc: "たすけてリストの ことば" }
-  };
   let WORDS = [];
   let quiz = null;
 
@@ -50,7 +45,7 @@
     WORDS = K.wordQueue();
     const st = K.battleStatus();
     document.getElementById("title-level").textContent =
-      K.levelsLabel() + "　履歴 " + st.seen + "ご";
+      K.levelsLabel() + "　まだ " + st.left + "ご";
     const lock = document.getElementById("lock-box");
     const start = document.getElementById("start-box");
     if (st.canPlay) {
@@ -60,29 +55,8 @@
       lock.hidden = false;
       start.hidden = true;
       document.getElementById("lock-count").textContent =
-        "いまの履歴は " + st.seen + "語です。10語以上になると遊べます。";
+        "まだ出していない単語が " + st.left + "語です。10語ないと遊べません。";
     }
-  }
-  function renderModes() {
-    const st = K.battleStatus();
-    const box = document.getElementById("mode-grid");
-    box.innerHTML = "";
-    [
-      { id: "easy", ok: st.canEasy, need: "せいかいした語が10語必要です。いま " + st.easy + "語。" },
-      { id: "normal", ok: st.canNormal, need: "せいかい5語とまちがい5語が必要です。いま せいかい " + st.easy + "・まちがい " + st.hard + "。" },
-      { id: "hard", ok: st.canHard, need: "たすけてリストが10語必要です。いま " + st.hard + "語。" }
-    ].forEach((it) => {
-      const meta = MODE_META[it.id];
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "mode-card" + (it.ok ? "" : " off");
-      b.innerHTML = "<span class='mode-name'>" + meta.name + "</span>"
-        + "<span class='mode-desc'>" + meta.desc + "</span>"
-        + "<span class='mode-need'>" + (it.ok ? "10もん はじめる" : it.need) + "</span>";
-      if (it.ok) b.addEventListener("click", () => startBattle(it.id));
-      else b.addEventListener("click", () => K.toast(it.need));
-      box.appendChild(b);
-    });
   }
   function renderGauge() {
     const g = document.getElementById("gauge");
@@ -123,7 +97,6 @@
   }
   function renderQuestion() {
     const w = quiz.items[quiz.i];
-    document.getElementById("q-mode").textContent = MODE_META[quiz.mode].name;
     renderGauge();
     renderTurn();
     setTurnFace("normal");
@@ -189,7 +162,13 @@
     quiz.i += 1;
     afterQuestion();
   }
+  function saveKidProgress() {
+    const kidLog = (quiz.log || []).filter((x) => isKid(x.i));
+    kidLog.forEach((x) => K.recordAnswer(x.en, x.ok));
+    K.markCleared(kidLog.map((x) => x.w));
+  }
   async function finishBattle() {
+    saveKidProgress();
     const c = counts();
     const kidPct = c.kidN ? Math.round(c.kidOk / c.kidN * 100) : 0;
     const parPct = c.parN ? Math.round(c.parOk / c.parN * 100) : 0;
@@ -215,13 +194,15 @@
     ).join("");
     show("result");
   }
-  function startBattle(mode) {
-    const items = K.pickBattleItems(mode);
+  function startBattle() {
+    const items = K.pickBattleItems();
     if (items.length < K.ROUND) {
-      K.toast("このモードは まだ あそべないよ");
+      K.toast("まだ出していない単語が10語ないよ");
+      renderTitle();
+      show("title");
       return;
     }
-    quiz = { mode: mode, items: items, i: 0, log: [], token: Date.now() };
+    quiz = { items: items, i: 0, log: [], token: Date.now() };
     show("quiz");
     renderQuestion();
   }
@@ -235,23 +216,13 @@
   function boot() {
     WORDS = K.wordQueue();
     renderTitle();
-    document.getElementById("go-modes").addEventListener("click", () => {
-      renderModes();
-      show("modes");
-    });
-    document.getElementById("modes-back").addEventListener("click", () => {
-      renderTitle();
-      show("title");
-    });
+    document.getElementById("go-start").addEventListener("click", startBattle);
     document.getElementById("quiz-quit").addEventListener("click", quitQuiz);
     document.getElementById("score-go").addEventListener("click", () => {
       document.getElementById("score-dlg").classList.remove("on");
       if (quiz) renderQuestion();
     });
-    document.getElementById("again").addEventListener("click", () => {
-      renderModes();
-      show("modes");
-    });
+    document.getElementById("again").addEventListener("click", startBattle);
     document.getElementById("result-home").addEventListener("click", () => {
       renderTitle();
       show("title");

@@ -734,40 +734,13 @@
     return missEntries().map((r) => r.w).filter((w) => w && allowed.has(w.en));
   }
   function battleStatus() {
-    const seen = seenWordItems();
-    const easy = clearedWordItems();
-    const hard = missWordItems();
-    const unique = new Set();
-    easy.forEach((w) => unique.add(w.en));
-    hard.forEach((w) => unique.add(w.en));
-    return {
-      seen: seen.length,
-      easy: easy.length,
-      hard: hard.length,
-      canPlay: seen.length >= ROUND,
-      canEasy: easy.length >= ROUND,
-      canHard: hard.length >= ROUND,
-      canNormal: easy.length >= 5 && hard.length >= 5 && unique.size >= ROUND
-    };
+    const left = unclearedWords().length;
+    return { left: left, canPlay: left >= ROUND };
   }
-  function pickBattleItems(mode) {
-    const easy = clearedWordItems();
-    const hard = missWordItems();
-    if (mode === "easy") return shuffleCopy(easy).slice(0, ROUND);
-    if (mode === "hard") return shuffleCopy(hard).slice(0, ROUND);
-    const easyPick = shuffleCopy(easy).slice(0, 5);
-    const used = new Set(easyPick.map((w) => w.en));
-    const hardPick = shuffleCopy(hard.filter((w) => !used.has(w.en))).slice(0, 5);
-    hardPick.forEach((w) => used.add(w.en));
-    const items = easyPick.concat(hardPick);
-    if (items.length < ROUND) {
-      shuffleCopy(easy.concat(hard)).forEach((w) => {
-        if (items.length >= ROUND || used.has(w.en)) return;
-        used.add(w.en);
-        items.push(w);
-      });
-    }
-    return shuffleCopy(items).slice(0, ROUND);
+  function pickBattleItems() {
+    const pool = unclearedWords().slice(0, ROUND);
+    if (pool.length < ROUND) return [];
+    return shuffleCopy(pool);
   }
   function downloadMissExcel(rows) {
     rows = rows || missEntries();

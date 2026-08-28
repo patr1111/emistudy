@@ -24,7 +24,7 @@
     </div>
     <div id="lock-box" class="stage-card lock-box" hidden>
       <h2>これはまだ遊べません</h2>
-      <p>ほかのゲームである程度すすめてから、できるようになります。</p>
+      <p>まだ出していない単語が10語ないと、対戦できません。</p>
       <p class="sub" id="lock-count"></p>
       <div class="btn-row">
         <a class="btn" href="shop.html">おかいものライブ</a>
@@ -33,25 +33,15 @@
       </div>
     </div>
     <div id="start-box" class="kid-actions" hidden>
-      <button class="btn" id="go-modes" type="button">モードを選ぶ</button>
+      <button class="btn" id="go-start" type="button">たたかう</button>
     </div>
-  </section>
-
-  <section id="modes" class="screen">
-    <nav class="game-bar">
-      <a class="btn ghost" href="index.html">トップページ</a>
-      <button class="btn ghost" id="modes-back" type="button">ゲームの最初</button>
-    </nav>
-    <h1 class="kid-h">モードを えらぶ</h1>
-    <p class="kid-line">こどもが さき。こうごに 5もんずつ。</p>
-    <div class="mode-grid" id="mode-grid"></div>
   </section>
 
   <section id="quiz" class="screen">
     <nav class="game-bar">
       <a class="btn ghost" href="index.html">トップページ</a>
       <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
-      <div class="pill" id="q-mode">かんたん</div>
+      <div class="pill" id="q-mode">たいせん</div>
     </nav>
     <div class="turn-banner" id="turn-banner">いまは こどものばん</div>
     <div class="vs-score" id="vs-score"></div>
@@ -110,11 +100,11 @@
       <p class="guide-kicker">パパやママと戦おう</p>
       <h2>進め方</h2>
       <ol>
-        <li>ほかのゲームで10語以上すすめると遊べます。履歴が足りないときは、まだ遊べませんと出ます。</li>
-        <li>かんたんは正解してきた語、むずかしいはたすけてリスト、ふつうは半々です。</li>
-        <li>こどもが先で、親と交互に5問ずつ、合計10問です。英語を見て日本語を6つの中から選びます。</li>
-        <li>4問めと8問めのあと、いまの点数を確認します。最後に正答率でどちらが勝ったかを出します。</li>
-        <li>このゲームの正誤は、単語のクリアやたすけてリストには入りません。おかいものと冒険の進みはそのままです。</li>
+        <li>まだ出していない単語から10問出ます。こどもが先で、親と交互に5問ずつです。</li>
+        <li>英語を見て日本語を6つの中から選びます。4問めと8問めのあと、いまの点数を確認します。</li>
+        <li>最後に正答率でどちらが勝ったかを出します。</li>
+        <li>こどものまちがいはたすけてリストに入り、答えた5語はおかいものと冒険ではもう出ません。親の正誤は記録しません。</li>
+        <li>途中でやめると、その対戦の記録は残りません。</li>
       </ol>
       <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
       <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
