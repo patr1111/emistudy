@@ -84,13 +84,15 @@
     s.names = Object.assign({}, DEFAULT_NAMES, s.names || {});
     s.kanji = s.kanji || "simple";
     const ids = CHAR_BY_TASTE[s.taste] || CHAR_BY_TASTE.kawaii;
-    if (!ids.includes(s.playerId)) s.playerId = W.defaultPlayer[s.taste] || ids[0];
-    if (!ids.includes(s.friendId)) s.friendId = W.defaultFriend[s.taste] || ids[1];
+    const customIds = W.customCharIds || [];
+    const allowed = ids.concat(customIds);
+    if (!allowed.includes(s.playerId)) s.playerId = W.defaultPlayer[s.taste] || ids[0];
+    if (!allowed.includes(s.friendId)) s.friendId = W.defaultFriend[s.taste] || ids[1];
     if (s.playerId === s.friendId) {
-      s.friendId = ids.find((id) => id !== s.playerId) || ids[1];
+      s.friendId = allowed.find((id) => id !== s.playerId) || ids[1];
     }
     if (!Array.isArray(s.shopBuddyIds) || !s.shopBuddyIds.length) s.shopBuddyIds = ids.slice();
-    s.shopBuddyIds = s.shopBuddyIds.filter((id) => ids.includes(id));
+    s.shopBuddyIds = s.shopBuddyIds.filter((id) => allowed.includes(id));
     if (!s.shopBuddyIds.length) s.shopBuddyIds = ids.slice();
     return s;
   }
@@ -221,6 +223,8 @@
   }
   function resetAll() { writeAll(blankAll()); }
   function displayName(id) {
+    const customIds = W.customCharIds || [];
+    if (customIds.indexOf(id) < 0) return DEFAULT_NAMES[id] || id;
     const names = getSettings().names || {};
     return (names[id] && String(names[id]).trim()) || DEFAULT_NAMES[id] || id;
   }
@@ -387,6 +391,37 @@
   function unClearPlace(place) {
     const slice = wordQueue().slice(place * PLACE_SIZE, (place + 1) * PLACE_SIZE);
     unClearEns(slice.map((w) => w.en));
+  }
+  function placeStepInfo(place) {
+    const slice = wordQueue().slice(place * PLACE_SIZE, (place + 1) * PLACE_SIZE);
+    const done = new Set(getProgress().clearedEns || []);
+    const need = Math.max(1, Math.ceil(slice.length / ROUND));
+    let doneRounds = 0;
+    for (let i = 0; i < need; i++) {
+      const chunk = slice.slice(i * ROUND, (i + 1) * ROUND);
+      if (chunk.length && chunk.every((w) => done.has(w.en))) doneRounds += 1;
+      else break;
+    }
+    return { slice: slice, need: need, doneRounds: doneRounds };
+  }
+  function unClearPlaceFromStep(place, fromStep) {
+    const info = placeStepInfo(place);
+    unClearEns(info.slice.slice(fromStep * ROUND).map((w) => w.en));
+  }
+  function marksRowHtml(items) {
+    let html = "<div class=\"step-marks\">";
+    (items || []).forEach((it) => {
+      html += "<span class=\"step-mark" + (it.done ? " done" : "") + (it.now ? " now" : "") + "\">"
+        + "<span class=\"step-ico\">" + (it.mark || "●") + "</span>"
+        + (it.done ? "<span class=\"step-x\">×</span>" : "")
+        + "</span>";
+    });
+    return html + "</div>";
+  }
+  function stepMarksHtml(mark, doneRounds, need) {
+    const items = [];
+    for (let i = 0; i < need; i++) items.push({ mark: mark || "●", done: i < doneRounds });
+    return marksRowHtml(items);
   }
   function unClearLast(n) {
     const p = getProgress();
@@ -656,7 +691,7 @@
     displayName, levelsLabel, setImage, getImage, shrinkFile,
     filteredWords, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
-    unClearEns, unClearPlace, unClearLast, resetCleared,
+    unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, downloadMissExcel,

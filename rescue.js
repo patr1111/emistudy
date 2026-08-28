@@ -23,16 +23,18 @@
     const list = places();
     return list[Math.min(Math.max(i, 0), list.length - 1)];
   }
-
-  function statusOf(i) {
-    if (i < state.stage) return "できた";
-    if (i === state.stage && state.stage < 5) return "いまここ";
-    return "まだ";
-  }
   function renderMap() {
     const grid = document.getElementById("rescue-map");
     if (!grid) return;
     grid.innerHTML = "";
+    const jm = document.getElementById("journey-marks");
+    if (jm) {
+      jm.innerHTML = K.marksRowHtml(places().map((place, i) => ({
+        mark: place.mark || "●",
+        done: i < state.stage,
+        now: i === state.stage && state.stage < 5
+      })));
+    }
     places().forEach((place, i) => {
       const el = document.createElement("button");
       el.type = "button";
@@ -46,7 +48,7 @@
           "<img src='img/" + place.scene + ".jpg' alt='' />" +
         "</span>" +
         "<span class='path-info'><span class='nm'>" + place.name + "</span>" +
-        "<span class='st'>" + statusOf(i) + "</span></span>";
+        "<span class='st'>" + K.marksRowHtml([{ mark: place.mark || "●", done: done, now: now }]) + "</span></span>";
       if (done) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
@@ -140,7 +142,7 @@
     document.getElementById(boxId).innerHTML = html;
   }
   function renderGauge() {
-    const mark = (placeAt(state.stage).mark) || "★";
+    const mark = (quiz && quiz.review) ? "💌" : ((placeAt(state.stage).mark) || "★");
     const g = document.getElementById("gauge");
     g.innerHTML = "";
     for (let i = 0; i < TOTAL; i++) {
@@ -162,7 +164,7 @@
     if (ex) ex.innerHTML = K.exampleHtml(w);
     K.setSpeakText(w.en, w.ex || "");
     const playBanner = document.querySelector("#play-banner img");
-    if (playBanner) playBanner.src = "img/" + placeAt(state.stage).scene + ".jpg";
+    if (playBanner) playBanner.src = quiz.review ? "img/illust-rescue.jpg" : ("img/" + placeAt(state.stage).scene + ".jpg");
     renderGauge();
     const box = document.getElementById("choices");
     box.innerHTML = "";
@@ -223,6 +225,13 @@
     renderMap();
     show("opening");
   }
+  function goMiss() {
+    quiz = null;
+    K.setSpeakText("", "");
+    document.getElementById("react").className = "react";
+    renderMiss();
+    show("miss");
+  }
   function quitStage() {
     if (!quiz) {
       goMap();
@@ -230,37 +239,64 @@
     }
     if (!confirm("このばしょをやめる？答えた分のまちがいは残るよ。クリアにはならないよ。")) return;
     roundToken += 1;
-    goMap();
+    if (quiz.review) goMiss();
+    else goMap();
+  }
+  function renderMiss() {
+    const rows = K.missEntries();
+    const count = document.getElementById("miss-count");
+    if (count) count.textContent = rows.length + "ご";
+    const list = document.getElementById("miss-list");
+    if (!list) return;
+    list.innerHTML = rows.length
+      ? rows.map((r) => "<div class='miss-row'><span>" + K.esc(r.en) + "</span><span class='ja'>" + K.esc(r.ja).replace(/\n/g, "<br>") + "</span><span>×" + r.wrong + "</span></div>").join("")
+      : "まだ まちがいは ないよ。";
+  }
+  async function startReview() {
+    const items = K.missEntries().slice(0, TOTAL).map((r) => r.w).filter(Boolean);
+    if (!items.length) { K.toast("まだ まちがいは ないよ"); return; }
+    document.getElementById("stageTitle").textContent = "たすけてリスト";
+    roundToken += 1;
+    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, review: true };
+    await renderFaces("play-faces");
+    show("play");
+    renderQuestion();
   }
   async function finishStage() {
     if (!quiz) return;
-    K.markCleared(quiz.items);
+    const review = !!quiz.review;
     const okN = quiz.score;
     const place = placeAt(state.stage);
     const resultBanner = document.querySelector("#result .quiz-banner img");
-    if (resultBanner) resultBanner.src = "img/" + place.scene + ".jpg";
-    let msg = okN + "もん できたよ。";
-    if (okN >= TOOL_NEED) {
-      if (!state.tools.includes(place.tool)) state.tools.push(place.tool);
-      msg += place.tool + " をてにいれた！";
+    if (resultBanner) resultBanner.src = review ? "img/illust-rescue.jpg" : ("img/" + place.scene + ".jpg");
+    if (!review) {
+      K.markCleared(quiz.items);
+      let msg = okN + "もん できたよ。";
+      if (okN >= TOOL_NEED) {
+        if (!state.tools.includes(place.tool)) state.tools.push(place.tool);
+        msg += place.tool + " をてにいれた！";
+      } else {
+        msg += "どうぐは つぎに がんばろう。";
+      }
+      state.stageEns = state.stageEns || [];
+      state.stageEns[state.stage] = quiz.items.map((w) => w.en);
+      state.stage += 1;
+      persist();
+      K.maybeAutoExport();
+      document.getElementById("result-msg").textContent = msg;
+      document.getElementById("score-big").textContent = (place.mark || "★").repeat(okN);
     } else {
-      msg += "どうぐは つぎに がんばろう。";
+      document.getElementById("result-msg").textContent = okN + "もん できたよ。";
+      document.getElementById("score-big").textContent = "💌".repeat(okN);
     }
-    state.stageEns = state.stageEns || [];
-    state.stageEns[state.stage] = quiz.items.map((w) => w.en);
-    state.stage += 1;
-    persist();
-    K.maybeAutoExport();
     await renderFaces("result-faces");
-    document.getElementById("score-big").textContent = (place.mark || "★").repeat(okN);
     document.getElementById("score-big").style.fontSize = "1.6rem";
-    document.getElementById("result-msg").textContent = msg;
     document.getElementById("result-review").innerHTML = quiz.log.map((x) =>
       "<div class='miss-row'><span>" + K.esc(x.en) + "</span><span class='ja'>" + (x.ok ? "○ " : "× ") + K.esc(K.jaText(x.w)).replace(/\n/g, "<br>") + "</span></div>"
     ).join("");
-    K.showPrize(document.querySelector("#result .prize"), K.allWordsCleared(), "rescue");
+    K.showPrize(document.querySelector("#result .prize"), !review && K.allWordsCleared(), "rescue");
     const nextBtn = document.getElementById("next-stage");
-    nextBtn.textContent = state.stage >= 5 ? "おわりを見る" : "マップへ";
+    nextBtn.textContent = review ? "リストへ" : (state.stage >= 5 ? "おわりを見る" : "マップへ");
     show("result");
   }
   async function startStage() {
@@ -301,6 +337,10 @@
     if (!WORDS.length) K.toast("この級の単語がまだないよ。管理画面で級を変えてね");
     document.getElementById("play-quit").addEventListener("click", quitStage);
     document.getElementById("next-stage").addEventListener("click", async () => {
+      if (quiz && quiz.review) {
+        goMiss();
+        return;
+      }
       if (state.stage >= 5) await showEnding();
       else goMap();
     });
@@ -309,6 +349,11 @@
     document.getElementById("end-save").addEventListener("click", () => K.downloadMissExcel());
     document.getElementById("result-home").addEventListener("click", goMap);
     document.getElementById("end-home").addEventListener("click", goMap);
+    document.getElementById("go-miss").addEventListener("click", () => { renderMiss(); show("miss"); });
+    document.getElementById("miss-back").addEventListener("click", goMap);
+    document.getElementById("miss-save").addEventListener("click", () => K.downloadMissExcel());
+    document.getElementById("review-start").addEventListener("click", () => startReview());
+    document.getElementById("save-xls").addEventListener("click", () => K.downloadMissExcel());
     window.addEventListener("resize", layoutPath);
     const guideGo = document.getElementById("guide-go");
     if (guideGo) guideGo.addEventListener("click", () => setTimeout(layoutPath, 40));

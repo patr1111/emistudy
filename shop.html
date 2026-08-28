@@ -111,6 +111,13 @@
     <div class="stage-card" id="miss-list"></div>
   </section>
 
+  <div class="story" id="redo-dlg">
+    <div class="story-card redo-card">
+      <p id="redo-text"></p>
+      <div class="btn-row" id="redo-btns"></div>
+      <button class="btn ghost" id="redo-cancel" type="button">やめる</button>
+    </div>
+  </div>
   <div class="story" id="story">
     <div class="story-card">
       <div class="quiz-banner"><img id="story-img" alt="" /></div>
@@ -132,11 +139,11 @@
       <p class="guide-kicker">おかいものライブ</p>
       <h2>進め方</h2>
       <ol>
-        <li>マップで場所を選びます。</li>
+        <li>マップで場所を選びます。1つの場所はアイコンが5こ。終わったこには×がつきます。</li>
         <li>一緒に行く仲間を1人選ぶと、短い物語のあと10問が始まります。</li>
         <li>英語を見て、日本語を6つの中から選びます。紛らわしい引っかけはありません。</li>
         <li>正解した語はクリアになり、ほかのゲームでも出ません。まちがえた語は「たすけてリスト」に残ります。</li>
-        <li>途中の「やめる」は、その回をクリアにしません。答えた分のまちがいだけ残ります。</li>
+        <li>「記録を消す」では、何個めから消すかを選べます。途中の「やめる」は、その回をクリアにしません。</li>
       </ol>
       <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
       <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>

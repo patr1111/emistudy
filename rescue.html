@@ -24,7 +24,12 @@
     </div>
     <div id="open-faces" class="buddy-row"></div>
     <p class="kid-line" id="open-story"></p>
+    <div class="kid-actions">
+      <button class="btn ghost" id="go-miss" type="button">たすけてリスト</button>
+      <button class="btn gold" id="save-xls" type="button">リストをほぞん</button>
+    </div>
     <h1 class="kid-h">ぼうけんマップ</h1>
+    <div id="journey-marks" class="journey-marks"></div>
     <div class="path-map">
       <svg id="path-svg" class="path-svg" aria-hidden="true">
         <line class="path-svg-base" />
@@ -36,6 +41,20 @@
     <div class="btn-row" id="ending-row" hidden>
       <button class="btn" type="button" id="see-ending">おしまいを見る</button>
     </div>
+  </section>
+
+  <section id="miss" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="miss-back" type="button">ゲームの最初</button>
+      <div class="pill" id="miss-count">0ご</div>
+    </nav>
+    <h1 class="kid-h">たすけてリスト</h1>
+    <div class="btn-row" style="margin: 0 0 12px">
+      <button class="btn" id="review-start" type="button">このリストで遊ぶ</button>
+      <button class="btn gold" id="miss-save" type="button">リストをほぞん</button>
+    </div>
+    <div class="stage-card" id="miss-list"></div>
   </section>
 
   <section id="play" class="screen">
@@ -113,9 +132,9 @@
       <p class="guide-kicker">ともだちをたすける</p>
       <h2>進め方</h2>
       <ol>
-        <li>1本の道のうえにある5つの場所を、いまの場所から順に進みます。各場所は10問、選択肢は6つです。</li>
+        <li>1本の道のうえにある5つの場所を、いまの場所から順に進みます。できた場所のアイコンには×がつきます。各場所は10問、選択肢は6つです。</li>
         <li>7問以上正解すると、その場所のどうぐが手に入ります。</li>
-        <li>クリアした語はほかのゲームでも出ません。まちがえた語は共通のリストに残ります。</li>
+        <li>クリアした語はほかのゲームでも出ません。まちがえた語は「たすけてリスト」に残ります。ここからもやり直せます。</li>
         <li>終わった場所の「記録を消す」で、そこからやり直せます。まちがいリストはそのままです。</li>
         <li>途中の「やめる」は、その場所をクリアにしません。マップに戻ります。</li>
       </ol>

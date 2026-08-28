@@ -28,6 +28,11 @@
   const defaultPlayer = { kawaii: "kirari", kakkoii: "ken", cool: "nao" };
   const defaultFriend = { kawaii: "momo", kakkoii: "ryu", cool: "aya" };
   const allCharas = charasByTaste.kawaii.concat(charasByTaste.kakkoii, charasByTaste.cool);
+  const customCharas = [
+    { id: "my1", name: "じぶん1", trait: "写真を入れて名前をつけてね。", custom: true },
+    { id: "my2", name: "じぶん2", trait: "写真を入れて名前をつけてね。", custom: true }
+  ];
+  const customCharIds = customCharas.map((c) => c.id);
   const charIdsByTaste = {
     kawaii: charasByTaste.kawaii.map((c) => c.id),
     kakkoii: charasByTaste.kakkoii.map((c) => c.id),
@@ -36,6 +41,7 @@
   const allCharIds = allCharas.map((c) => c.id);
   const defaultNames = {};
   allCharas.forEach((c) => { defaultNames[c.id] = c.name; });
+  customCharas.forEach((c) => { defaultNames[c.id] = c.name; });
 
   const shopPlaces = {
     kawaii: [
@@ -123,7 +129,7 @@
   const rescueCheers = ["その調子！", "いい感じ！", "そのちょうしだ！"];
 
   global.KiramekiWorld = {
-    charasByTaste, allCharas, charIdsByTaste, allCharIds, defaultNames,
+    charasByTaste, allCharas, customCharas, customCharIds, charIdsByTaste, allCharIds, defaultNames,
     defaultPlayer, defaultFriend, shopPlaces, shopScenes, giftScene, shopStories, rescuePlaces, rescueCheers
   };
 })(window);

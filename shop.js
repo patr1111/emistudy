@@ -46,18 +46,16 @@
     document.getElementById("map-stat").textContent = mark + " " + Math.floor((K.getProgress().clearedEns || []).length / ROUND) + " ／ まちがい " + K.missEntries().length;
     const grid = document.getElementById("map-grid");
     grid.innerHTML = "";
+    const cleared = new Set(K.getProgress().clearedEns || []);
     for (let p = 0; p < n; p++) {
-      const slice = K.wordQueue().slice(p * PLACE_SIZE, (p + 1) * PLACE_SIZE);
-      const done = new Set(K.getProgress().clearedEns || []);
-      const doneN = slice.filter((w) => done.has(w.en)).length;
-      const need = Math.ceil(slice.length / ROUND) || 1;
-      const doneRounds = Math.floor(doneN / ROUND);
-      const fullyDone = slice.length > 0 && doneN === slice.length;
+      const info = K.placeStepInfo(p);
+      const anyDone = info.slice.some((w) => cleared.has(w.en));
+      const fullyDone = info.slice.length > 0 && info.doneRounds >= info.need;
       const el = document.createElement("button");
       el.type = "button";
       el.className = "place" + (p > open ? " lock" : "") + (p === open ? " now" : "") + (fullyDone ? " done" : "");
-      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' /><div class='place-cap'><div class='nm'>" + placeRow(p)[0] + "</div><div class='st'>" + "●".repeat(doneRounds) + "○".repeat(Math.max(0, need - doneRounds)) + "</div></div>";
-      if (doneN > 0) {
+      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' /><div class='place-cap'><div class='nm'>" + placeRow(p)[0] + "</div><div class='st'>" + K.stepMarksHtml(placeRow(p)[1], info.doneRounds, info.need) + "</div></div>";
+      if (anyDone) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
         redo.textContent = "記録を消す";
@@ -72,13 +70,38 @@
       grid.appendChild(el);
     }
   }
+  function closeRedoDlg() {
+    const dlg = document.getElementById("redo-dlg");
+    if (dlg) dlg.classList.remove("on");
+  }
   function redoPlace(place) {
-    if (!confirm("このばしょの記録を消す？まちがいリストはそのまま残るよ。")) return;
-    K.unClearPlace(place);
-    extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
-    persist();
-    K.toast("このばしょの記録を消したよ");
-    renderMap();
+    const info = K.placeStepInfo(place);
+    const cleared = new Set(K.getProgress().clearedEns || []);
+    const anyDone = info.slice.some((w) => cleared.has(w.en));
+    if (!anyDone) return;
+    const dlg = document.getElementById("redo-dlg");
+    const text = document.getElementById("redo-text");
+    const box = document.getElementById("redo-btns");
+    const name = placeRow(place)[0];
+    text.textContent = name + "は " + info.need + "こ あるよ。どのステップまで消す？選んだところから あとを消すよ。まちがいリストは残るよ。";
+    box.innerHTML = "";
+    const maxStep = info.doneRounds > 0 ? info.doneRounds : 1;
+    for (let s = 0; s < maxStep; s++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn";
+      b.textContent = (s === 0 ? "1こめから全部" : (s + 1) + "こめから");
+      b.addEventListener("click", () => {
+        closeRedoDlg();
+        K.unClearPlaceFromStep(place, s);
+        extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
+        persist();
+        K.toast((s + 1) + "こめから消したよ");
+        renderMap();
+      });
+      box.appendChild(b);
+    }
+    dlg.classList.add("on");
   }
 
   async function openPick(place, customWords) {
@@ -278,6 +301,7 @@
     document.getElementById("pick-back").addEventListener("click", () => { renderMap(); show("map"); });
     document.getElementById("go-miss").addEventListener("click", () => { renderMiss(); show("miss"); });
     document.getElementById("miss-back").addEventListener("click", () => show("title"));
+    document.getElementById("redo-cancel").addEventListener("click", closeRedoDlg);
     document.getElementById("next-round").addEventListener("click", goNextShopping);
     document.getElementById("result-map").addEventListener("click", () => { renderMap(); show("map"); });
     document.getElementById("result-home").addEventListener("click", () => show("title"));

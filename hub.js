@@ -49,77 +49,121 @@
     if ((st.shopBuddyIds || []).indexOf(c.id) >= 0) tags.push("買い物仲間");
     return tags.length ? tags.join("・") : "役なし";
   }
+  function addFileInput(parent, label, onFile) {
+    const lab = document.createElement("label");
+    lab.className = "photo-lab";
+    const cap = document.createElement("span");
+    cap.textContent = label;
+    const file = document.createElement("input");
+    file.type = "file";
+    file.accept = "image/*";
+    file.addEventListener("change", async (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      ev.target.value = "";
+      if (!f) return;
+      await onFile(f);
+    });
+    lab.appendChild(cap);
+    lab.appendChild(file);
+    parent.appendChild(lab);
+  }
+  function addRoleButtons(roles, c, st) {
+    const mkBtn = (label, on, click) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "role-btn" + (on ? " on" : "");
+      b.textContent = label;
+      b.addEventListener("click", click);
+      roles.appendChild(b);
+    };
+    mkBtn("主人公", st.playerId === c.id, () => {
+      K.saveSettings({ playerId: c.id });
+      refresh();
+    });
+    mkBtn("友達", st.friendId === c.id, () => {
+      K.saveSettings({ friendId: c.id });
+      refresh();
+    });
+    mkBtn("買い物仲間", (st.shopBuddyIds || []).indexOf(c.id) >= 0, () => {
+      const ids = (K.getSettings().shopBuddyIds || []).slice();
+      const i = ids.indexOf(c.id);
+      if (i >= 0) {
+        if (ids.length <= 1) {
+          K.toast("買い物仲間は1人以上選んでください");
+          return;
+        }
+        ids.splice(i, 1);
+      } else {
+        ids.push(c.id);
+      }
+      K.saveSettings({ shopBuddyIds: ids });
+      refresh();
+    });
+  }
   async function renderAtlas() {
     const box = document.getElementById("char-atlas");
     const st = K.getSettings();
     box.innerHTML = "";
-    for (const c of C.CHARAS) {
+    for (const c of C.atlasChars()) {
       const wrap = document.createElement("div");
-      wrap.className = "friend-slot atlas-slot";
-      wrap.innerHTML = await C.faceHtml(c, "normal", 96);
+      wrap.className = "friend-slot atlas-slot" + (c.custom ? " custom" : "");
+      if (c.custom) {
+        const moods = document.createElement("div");
+        moods.className = "atlas-moods";
+        moods.innerHTML =
+          "<div class='mood'><span class='mood-lab'>うれしい</span>" + await C.faceHtml(c, "happy", 72) + "</div>"
+          + "<div class='mood'><span class='mood-lab'>くやしい</span>" + await C.faceHtml(c, "sad", 72) + "</div>";
+        wrap.appendChild(moods);
+      } else {
+        wrap.innerHTML = await C.faceHtml(c, "normal", 96);
+      }
       const row = document.createElement("div");
       row.className = "name-row";
-      const inp = document.createElement("input");
-      inp.type = "text";
-      inp.maxLength = 12;
-      inp.value = K.displayName(c.id);
-      inp.addEventListener("change", () => {
-        const names = {};
-        names[c.id] = inp.value;
-        K.saveSettings({ names: names });
-      });
-      row.appendChild(inp);
-      const file = document.createElement("input");
-      file.type = "file";
-      file.accept = "image/*";
-      file.addEventListener("change", async (ev) => {
-        const f = ev.target.files && ev.target.files[0];
-        ev.target.value = "";
-        if (!f) return;
-        await K.setImage("friend-" + c.id, await K.shrinkFile(f));
-        K.toast("画像を入れました（この端末のみ）");
-        refresh();
-      });
+      if (c.custom) {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.maxLength = 12;
+        inp.value = K.displayName(c.id);
+        inp.placeholder = "名前";
+        inp.addEventListener("change", () => {
+          const names = {};
+          names[c.id] = inp.value;
+          K.saveSettings({ names: names });
+        });
+        row.appendChild(inp);
+      } else {
+        const nm = document.createElement("div");
+        nm.className = "char-name";
+        nm.textContent = K.displayName(c.id);
+        row.appendChild(nm);
+      }
       const tags = document.createElement("div");
       tags.className = "role-tags";
       tags.textContent = roleLabels(c, st);
       const roles = document.createElement("div");
       roles.className = "role-row";
-      const mkBtn = (label, on, click) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "role-btn" + (on ? " on" : "");
-        b.textContent = label;
-        b.addEventListener("click", click);
-        roles.appendChild(b);
-      };
-      mkBtn("主人公", st.playerId === c.id, () => {
-        K.saveSettings({ playerId: c.id });
-        refresh();
-      });
-      mkBtn("友達", st.friendId === c.id, () => {
-        K.saveSettings({ friendId: c.id });
-        refresh();
-      });
-      mkBtn("買い物仲間", (st.shopBuddyIds || []).indexOf(c.id) >= 0, () => {
-        const ids = (K.getSettings().shopBuddyIds || []).slice();
-        const i = ids.indexOf(c.id);
-        if (i >= 0) {
-          if (ids.length <= 1) {
-            K.toast("買い物仲間は1人以上選んでください");
-            return;
-          }
-          ids.splice(i, 1);
-        } else {
-          ids.push(c.id);
-        }
-        K.saveSettings({ shopBuddyIds: ids });
-        refresh();
-      });
+      addRoleButtons(roles, c, st);
       wrap.appendChild(row);
       wrap.appendChild(tags);
       wrap.appendChild(roles);
-      wrap.appendChild(file);
+      if (c.custom) {
+        addFileInput(wrap, "うれしい顔", async (f) => {
+          await K.setImage("friend-" + c.id + "-happy", await K.shrinkFile(f));
+          K.toast("うれしい顔を入れました（この端末のみ）");
+          refresh();
+        });
+        addFileInput(wrap, "くやしい顔", async (f) => {
+          await K.setImage("friend-" + c.id + "-sad", await K.shrinkFile(f));
+          K.toast("くやしい顔を入れました（この端末のみ）");
+          refresh();
+        });
+      } else {
+        addFileInput(wrap, "写真を変える", async (f) => {
+          await K.setImage("friend-" + c.id, await K.shrinkFile(f));
+          K.toast("画像を入れました（この端末のみ）");
+          refresh();
+        });
+      }
       box.appendChild(wrap);
     }
   }
