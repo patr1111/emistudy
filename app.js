@@ -40,6 +40,7 @@
     hideRescueGuide: false,
     hideBattleGuide: false,
     prizeOn: true,
+    battleParentLevels: ["pre2"],
     names: Object.assign({}, DEFAULT_NAMES)
   };
 
@@ -75,6 +76,11 @@
     }
     s.levels = s.levels.filter((id) => LEVELS.some((x) => x.id === id));
     if (!s.levels.length) s.levels = ["pre2"];
+    if (!Array.isArray(s.battleParentLevels) || !s.battleParentLevels.length) {
+      s.battleParentLevels = s.levels.slice();
+    }
+    s.battleParentLevels = s.battleParentLevels.filter((id) => LEVELS.some((x) => x.id === id));
+    if (!s.battleParentLevels.length) s.battleParentLevels = s.levels.slice();
     if (!s.taste) {
       s.taste = s.theme === "sky" ? "cool" : "kawaii";
     }
@@ -233,12 +239,14 @@
     const names = getSettings().names || {};
     return (names[id] && String(names[id]).trim()) || DEFAULT_NAMES[id] || id;
   }
-  function levelsLabel() {
-    return getSettings().levels.map((id) => {
+  function levelsLabelFor(ids) {
+    return (ids || []).map((id) => {
       const hit = LEVELS.find((x) => x.id === id);
       return hit ? hit.name : id;
     }).join("・");
   }
+  function levelsLabel() { return levelsLabelFor(getSettings().levels); }
+  function parentLevelsLabel() { return levelsLabelFor(getSettings().battleParentLevels); }
 
   const IMG_LS = STORE_KEY + "-img";
   const objectUrls = {};
@@ -485,11 +493,13 @@
   }
 
   function allWords() { return global.WORDS || []; }
-  function filteredWords() {
+  function wordsForLevels(levelIds) {
     const st = getSettings();
-    const set = new Set(st.levels);
+    const set = new Set(levelIds && levelIds.length ? levelIds : st.levels);
     return allWords().filter((w) => set.has(w.lv) && (st.abstract || !w.ab));
   }
+  function filteredWords() { return wordsForLevels(getSettings().levels); }
+  function parentWordPool() { return wordsForLevels(getSettings().battleParentLevels); }
   function wordQueue() {
     const all = filteredWords();
     return all.slice(0, Math.floor(all.length / ROUND) * ROUND);
@@ -735,12 +745,26 @@
   }
   function battleStatus() {
     const left = unclearedWords().length;
-    return { left: left, canPlay: left >= ROUND };
+    const parentN = parentWordPool().length;
+    return { left: left, parentN: parentN, canPlay: left >= ROUND && parentN >= 6 };
   }
   function pickBattleItems() {
-    const pool = unclearedWords().slice(0, ROUND);
-    if (pool.length < ROUND) return [];
-    return shuffleCopy(pool);
+    const kidPool = unclearedWords().slice(0, ROUND);
+    if (kidPool.length < ROUND) return [];
+    const kidItems = shuffleCopy(kidPool).slice(0, 5);
+    const used = new Set(kidItems.map((w) => w.en));
+    let parentSrc = parentWordPool().filter((w) => !used.has(w.en));
+    if (parentSrc.length < 5) parentSrc = parentWordPool().slice();
+    if (parentSrc.length < 5) {
+      wordQueue().forEach((w) => {
+        if (!used.has(w.en) && parentSrc.indexOf(w) < 0) parentSrc.push(w);
+      });
+    }
+    const parentItems = shuffleCopy(parentSrc).slice(0, 5);
+    if (kidItems.length < 5 || parentItems.length < 5) return [];
+    const items = [];
+    for (let i = 0; i < 5; i++) items.push(kidItems[i], parentItems[i]);
+    return items;
   }
   function downloadMissExcel(rows) {
     rows = rows || missEntries();
@@ -824,28 +848,54 @@
     return { flash: FLASH, wait: WAIT };
   }
   let reactWaitFinish = null;
+  let clickShield = null;
+  function eatClickThrough() {
+    if (clickShield) {
+      clearTimeout(clickShield.t);
+      if (clickShield.el.parentNode) clickShield.el.remove();
+    }
+    const shield = document.createElement("div");
+    shield.className = "click-shield";
+    shield.setAttribute("aria-hidden", "true");
+    const stop = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+    };
+    ["pointerdown", "pointerup", "click", "touchstart", "touchend", "mousedown", "mouseup"].forEach((type) => {
+      shield.addEventListener(type, stop, true);
+    });
+    document.body.appendChild(shield);
+    const t = setTimeout(() => {
+      if (shield.parentNode) shield.remove();
+      if (clickShield && clickShield.el === shield) clickShield = null;
+    }, 400);
+    clickShield = { el: shield, t: t };
+  }
   function waitReact(ms) {
     const el = document.getElementById("react");
     if (reactWaitFinish) reactWaitFinish();
     return new Promise((resolve) => {
       let done = false;
-      const finish = () => {
+      const finish = (fromUser) => {
         if (done) return;
         done = true;
         reactWaitFinish = null;
         if (el) {
-          el.className = "react";
           el.removeEventListener("click", onBg);
+          if (fromUser) eatClickThrough();
+          el.className = "react";
         }
         resolve();
       };
       const onBg = (ev) => {
         if (ev.target.closest(".react-box")) return;
-        finish();
+        ev.preventDefault();
+        ev.stopPropagation();
+        finish(true);
       };
-      reactWaitFinish = finish;
+      reactWaitFinish = () => finish(false);
       if (el) el.addEventListener("click", onBg);
-      setTimeout(finish, ms);
+      setTimeout(() => finish(false), ms);
     });
   }
   function showPrize(box, allDone, game) {
@@ -915,8 +965,8 @@
     STORE_KEY, ROUND, PLACE_SIZE, CHAR_IDS, CHAR_BY_TASTE, LEVELS, KANJI_MODES, TASTES, DEFAULT_SETTINGS, DEFAULT_NAMES, GAMES,
     today, esc, toast, applyTaste,
     getSettings, saveSettings, getProgress, saveProgress, getGame, saveGame, getShop, saveShop, getRescue, saveRescue, resetAll,
-    displayName, levelsLabel, setImage, getImage, shrinkFile,
-    filteredWords, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
+    displayName, levelsLabel, parentLevelsLabel, setImage, getImage, shrinkFile,
+    filteredWords, parentWordPool, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
     unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,

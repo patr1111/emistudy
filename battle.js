@@ -41,11 +41,34 @@
       + "<div class='vs-vs'>VS</div>"
       + "<div class='vs-col'><span class='vs-who'>パパ・ママ</span><span class='vs-num'>" + c.parOk + "／" + c.parN + "</span></div>";
   }
+  function fillParentLevels() {
+    const box = document.getElementById("parent-level-seg");
+    if (!box) return;
+    const selected = K.getSettings().battleParentLevels || [];
+    box.innerHTML = "";
+    K.LEVELS.forEach((it) => {
+      const lab = document.createElement("label");
+      lab.innerHTML = '<input type="checkbox" value="' + it.id + '"> ' + it.name;
+      lab.querySelector("input").checked = selected.indexOf(it.id) >= 0;
+      lab.querySelector("input").addEventListener("change", () => {
+        const levels = Array.from(box.querySelectorAll("input:checked")).map((el) => el.value);
+        if (!levels.length) {
+          lab.querySelector("input").checked = true;
+          K.toast("級は1つ以上選んでください");
+          return;
+        }
+        K.saveSettings({ battleParentLevels: levels });
+        renderTitle();
+      });
+      box.appendChild(lab);
+    });
+  }
   function renderTitle() {
     WORDS = K.wordQueue();
     const st = K.battleStatus();
     document.getElementById("title-level").textContent =
-      K.levelsLabel() + "　まだ " + st.left + "ご";
+      "こども " + K.levelsLabel() + "　パパ・ママ " + K.parentLevelsLabel() + "　まだ " + st.left + "ご";
+    fillParentLevels();
     const lock = document.getElementById("lock-box");
     const start = document.getElementById("start-box");
     if (st.canPlay) {
@@ -54,8 +77,10 @@
     } else {
       lock.hidden = false;
       start.hidden = true;
-      document.getElementById("lock-count").textContent =
-        "まだ出していない単語が " + st.left + "語です。10語ないと遊べません。";
+      const why = st.parentN < 6
+        ? "パパ・ママの級の単語が足りません。級を変えてください。"
+        : "まだ出していない単語が " + st.left + "語です。10語ないと遊べません。";
+      document.getElementById("lock-count").textContent = why;
     }
   }
   function renderGauge() {
@@ -106,7 +131,8 @@
     K.setSpeakText(w.en, w.ex || "");
     const box = document.getElementById("choices");
     box.innerHTML = "";
-    K.pickChoices(w, WORDS, CHOICES).forEach((opt) => {
+    const pool = isKid(quiz.i) ? (quiz.kidPool || WORDS) : (quiz.parentPool || WORDS);
+    K.pickChoices(w, pool, CHOICES).forEach((opt) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "choice";
@@ -202,7 +228,14 @@
       show("title");
       return;
     }
-    quiz = { items: items, i: 0, log: [], token: Date.now() };
+    quiz = {
+      items: items,
+      i: 0,
+      log: [],
+      token: Date.now(),
+      kidPool: K.wordQueue(),
+      parentPool: K.parentWordPool()
+    };
     show("quiz");
     renderQuestion();
   }

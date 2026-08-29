@@ -376,6 +376,9 @@ img.face.mood-sad { filter: saturate(0.55) brightness(0.88) grayscale(0.15); }
   font-size: 4rem; box-shadow: 0 8px 0 var(--shadow);
 }
 .prize p { margin-top: 10px; font-weight: 800; font-size: 1.05rem; line-height: 1.55; }
+.click-shield {
+  position: fixed; inset: 0; z-index: 10000; touch-action: none;
+}
 .react { pointer-events: none; z-index: 40; }
 .react.on { pointer-events: auto; cursor: pointer; }
 .react-box {
@@ -778,6 +781,15 @@ html:not(.landing) .stage-card {
 .lock-box[hidden], #start-box[hidden] { display: none !important; }
 .lock-box h2 { margin: 0 0 10px; font-size: 1.35rem; }
 .lock-box p { font-weight: 700; line-height: 1.65; margin: 0 0 10px; }
+#start-box { max-width: 520px; margin: 0 auto 28px; }
+.parent-lv-card {
+  background: #fff; border: 3px solid var(--choice-border); border-radius: 20px;
+  padding: 16px 14px 12px; margin: 0 12px 12px; text-align: center;
+  box-shadow: 0 6px 0 var(--shadow);
+}
+.parent-lv-lab { font-weight: 800; margin: 0 0 10px; font-size: 1.05rem; }
+.parent-lv-card .seg { justify-content: center; }
+.parent-lv-card .sub { margin: 8px 0 0; font-size: 0.82rem; }
 .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 820px; margin: 0 auto 24px; }
 .mode-card {
   display: flex; flex-direction: column; gap: 8px; text-align: left;

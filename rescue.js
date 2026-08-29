@@ -23,24 +23,38 @@
     const list = places();
     return list[Math.min(Math.max(i, 0), list.length - 1)];
   }
+  function cursor() {
+    if (K.allWordsCleared()) {
+      const last = Math.max(0, K.placeCount() - 1);
+      const info = K.placeStepInfo(last);
+      return { shopPlace: last, step: info.need, need: info.need, allDone: true };
+    }
+    const shopPlace = K.unlockedPlace();
+    const info = K.placeStepInfo(shopPlace);
+    return { shopPlace: shopPlace, step: info.doneRounds, need: info.need, allDone: false };
+  }
+  function livePlace() {
+    return (quiz && typeof quiz.place === "number") ? quiz.place : cursor().step;
+  }
   function renderMap() {
     const grid = document.getElementById("rescue-map");
     if (!grid) return;
     grid.innerHTML = "";
+    const cur = cursor();
     const jm = document.getElementById("journey-marks");
     if (jm) {
       jm.innerHTML = K.marksRowHtml(places().map((place, i) => ({
         mark: place.mark || "●",
-        done: i < state.stage,
-        now: i === state.stage && state.stage < 5
+        done: cur.allDone || i < cur.step,
+        now: !cur.allDone && i === cur.step && i < cur.need
       })));
     }
     places().forEach((place, i) => {
       const el = document.createElement("button");
       el.type = "button";
-      const now = i === state.stage && state.stage < 5;
-      const done = i < state.stage;
-      const lock = i > state.stage;
+      const now = !cur.allDone && i === cur.step && i < cur.need;
+      const done = cur.allDone || i < cur.step;
+      const lock = !done && !now;
       el.className = "path-stop" + (now ? " now" : "") + (done ? " done" : "") + (lock ? " lock" : "");
       el.innerHTML =
         "<span class='path-node'>" +
@@ -49,7 +63,7 @@
         "</span>" +
         "<span class='path-info'><span class='nm'>" + place.name + "</span>" +
         "<span class='st'>" + K.marksRowHtml([{ mark: place.mark || "●", done: done, now: now }]) + "</span></span>";
-      if (done) {
+      if (done && (!cur.allDone || i < cur.need)) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
         redo.textContent = "記録を消す";
@@ -67,7 +81,7 @@
       grid.appendChild(el);
     });
     const endingRow = document.getElementById("ending-row");
-    if (endingRow) endingRow.hidden = state.stage < 5;
+    if (endingRow) endingRow.hidden = !cur.allDone;
     updateOpenHint();
     layoutPath();
   }
@@ -99,26 +113,20 @@
       base.setAttribute("y2", String(ys[ys.length - 1]));
     }
     if (done) {
-      const di = Math.min(state.stage, ys.length - 1);
+      const di = Math.min(cursor().step, ys.length - 1);
       done.setAttribute("x1", String(cx));
       done.setAttribute("x2", String(cx));
       done.setAttribute("y1", String(ys[0]));
       done.setAttribute("y2", String(ys[di]));
-      done.setAttribute("opacity", state.stage > 0 ? "1" : "0");
+      done.setAttribute("opacity", cursor().step > 0 || cursor().allDone ? "1" : "0");
     }
   }
   function redoFrom(i) {
-    if (i >= state.stage) return;
-    if (!confirm(placeAt(i).name + "の記録を消す？この先のクリアも消えるよ。まちがいリストはそのまま残るよ。")) return;
-    const ens = [];
-    (state.stageEns || []).slice(i).forEach((arr) => {
-      (arr || []).forEach((en) => ens.push(en));
-    });
-    if (ens.length) K.unClearEns(ens);
-    else K.unClearLast(TOTAL * (state.stage - i));
-    state.stage = i;
+    const cur = cursor();
+    if (!cur.allDone && i >= cur.step) return;
+    if (!confirm(placeAt(i).name + "の記録を消す？この先のクリアも消えるよ。おかいものの同じ場所も戻るよ。まちがいリストはそのまま残るよ。")) return;
+    K.unClearPlaceFromStep(cur.shopPlace, i);
     state.tools = (state.tools || []).slice(0, i);
-    state.stageEns = (state.stageEns || []).slice(0, i);
     persist();
     K.toast(placeAt(i).name + "の記録を消したよ");
     renderMap();
@@ -126,12 +134,13 @@
   function updateOpenHint() {
     const hint = document.getElementById("open-redo-hint");
     if (!hint) return;
-    if (state.stage >= 5) {
-      hint.textContent = "5つのばしょ おわったよ。できたばしょの「記録を消す」でもう一度できるよ。";
-    } else if (state.stage > 0) {
-      hint.textContent = "できたばしょの「記録を消す」を押すと、そこからもう一度できるよ。";
+    const cur = cursor();
+    if (cur.allDone) {
+      hint.textContent = "全部できたよ。できたばしょの「記録を消す」でもう一度できるよ。";
+    } else if (cur.step > 0) {
+      hint.textContent = "おかいものも おなじ すすみだよ。できたばしょの「記録を消す」で、そこからもう一度できるよ。";
     } else {
-      hint.textContent = "かがやいてるばしょから、ひとつずつ いこう。";
+      hint.textContent = "おかいものも おなじ すすみだよ。かがやいてるばしょから、ひとつずつ いこう。";
     }
   }
   async function renderFaces(boxId) {
@@ -142,7 +151,7 @@
     document.getElementById(boxId).innerHTML = html;
   }
   function renderGauge() {
-    const mark = (quiz && quiz.review) ? "💌" : ((placeAt(state.stage).mark) || "★");
+    const mark = (quiz && quiz.review) ? "💌" : ((placeAt(livePlace()).mark) || "★");
     const g = document.getElementById("gauge");
     g.innerHTML = "";
     for (let i = 0; i < TOTAL; i++) {
@@ -164,7 +173,7 @@
     if (ex) ex.innerHTML = K.exampleHtml(w);
     K.setSpeakText(w.en, w.ex || "");
     const playBanner = document.querySelector("#play-banner img");
-    if (playBanner) playBanner.src = quiz.review ? "img/illust-rescue.jpg" : ("img/" + placeAt(state.stage).scene + ".jpg");
+    if (playBanner) playBanner.src = quiz.review ? "img/illust-rescue.jpg" : ("img/" + placeAt(livePlace()).scene + ".jpg");
     renderGauge();
     const box = document.getElementById("choices");
     box.innerHTML = "";
@@ -262,7 +271,7 @@
     if (!quiz) return;
     const review = !!quiz.review;
     const okN = quiz.score;
-    const place = placeAt(state.stage);
+    const place = placeAt(livePlace());
     const resultBanner = document.querySelector("#result .quiz-banner img");
     if (resultBanner) resultBanner.src = review ? "img/illust-rescue.jpg" : ("img/" + place.scene + ".jpg");
     if (!review) {
@@ -274,9 +283,6 @@
       } else {
         msg += "どうぐは つぎに がんばろう。";
       }
-      state.stageEns = state.stageEns || [];
-      state.stageEns[state.stage] = quiz.items.map((w) => w.en);
-      state.stage += 1;
       persist();
       K.maybeAutoExport();
       document.getElementById("result-msg").textContent = msg;
@@ -292,11 +298,12 @@
     ).join("");
     K.showPrize(document.querySelector("#result .prize"), !review && K.allWordsCleared(), "rescue");
     const nextBtn = document.getElementById("next-stage");
-    nextBtn.textContent = review ? "リストへ" : (state.stage >= 5 ? "おわりを見る" : "マップへ");
+    nextBtn.textContent = review ? "リストへ" : (K.allWordsCleared() ? "おわりを見る" : "マップへ");
     show("result");
   }
   async function startStage() {
-    if (state.stage >= 5) {
+    const cur = cursor();
+    if (cur.allDone) {
       await showEnding();
       return;
     }
@@ -309,9 +316,9 @@
       K.toast("出る単語がもうないよ");
       return;
     }
-    document.getElementById("stageTitle").textContent = placeAt(state.stage).name;
+    document.getElementById("stageTitle").textContent = placeAt(cur.step).name;
     roundToken += 1;
-    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken };
+    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.step, shopPlace: cur.shopPlace };
     await renderFaces("play-faces");
     show("play");
     renderQuestion();
@@ -327,7 +334,7 @@
     WORDS = K.wordQueue();
     document.getElementById("title-level").textContent =
       K.levelsLabel() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
-    document.getElementById("open-story").textContent = pal() + "の ところまで、ばしょを ひとつずつ いこう。";
+    document.getElementById("open-story").textContent = pal() + "の ところまで、ばしょを ひとつずつ いこう。おかいものも おなじ すすみだよ。";
     await renderFaces("open-faces");
     renderMap();
     if (!WORDS.length) K.toast("この級の単語がまだないよ。管理画面で級を変えてね");
@@ -337,7 +344,7 @@
         goMiss();
         return;
       }
-      if (state.stage >= 5) await showEnding();
+      if (K.allWordsCleared()) await showEnding();
       else goMap();
     });
     document.getElementById("see-ending").addEventListener("click", () => showEnding());
