@@ -20,7 +20,8 @@
   let roundToken = 0;
 
   function placeRow(p) {
-    return shopPlaces()[p] || ["ばしょ", "⭐", "スター"];
+    const list = shopPlaces();
+    return list[(p || 0) % list.length] || ["ばしょ", "⭐", "スター"];
   }
   function placeMark(p) {
     return quiz && quiz.review ? "💌" : placeRow(p)[1];
@@ -40,14 +41,16 @@
   function nm(c) { return C.shownName(c); }
 
   function renderMap() {
-    const n = K.placeCount();
+    const range = K.shopPlaceRange();
     const open = K.unlockedPlace();
     const mark = { kawaii: "🎀", kakkoii: "⚡", cool: "◆" }[tasteId()] || "🎀";
+    const lvEl = document.getElementById("map-lv");
+    if (lvEl) lvEl.textContent = "Lv" + K.levelDisplay();
     document.getElementById("map-stat").textContent = mark + " " + Math.floor((K.getProgress().clearedEns || []).length / ROUND) + " ／ まちがい " + K.missEntries().length;
     const grid = document.getElementById("map-grid");
     grid.innerHTML = "";
     const cleared = new Set(K.getProgress().clearedEns || []);
-    for (let p = 0; p < n; p++) {
+    for (let p = range.start; p < range.end; p++) {
       const info = K.placeStepInfo(p);
       const anyDone = info.slice.some((w) => cleared.has(w.en));
       const fullyDone = info.slice.length > 0 && info.doneRounds >= info.need;
@@ -69,6 +72,7 @@
       else if (fullyDone) el.addEventListener("click", () => redoPlace(p));
       grid.appendChild(el);
     }
+    K.renderMapPrize(document.getElementById("map-prize"));
   }
   function closeRedoDlg() {
     const dlg = document.getElementById("redo-dlg");
@@ -239,10 +243,21 @@
     if (!quiz) return;
     const okN = quiz.log.filter((x) => x.ok).length;
     if (!quiz.review) {
+      const before = K.clearedInQueue();
       K.markCleared(quiz.items);
       extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
       persist();
       K.maybeAutoExport();
+      const after = K.clearedInQueue();
+      const leveled = K.levelJustCleared(before, after);
+      const up = document.getElementById("level-up-line");
+      if (up) {
+        up.hidden = !(leveled && !K.allWordsCleared());
+        if (!up.hidden) up.textContent = "お買い物レベルが上がった！　Lv" + K.levelDisplay();
+      }
+    } else {
+      const up = document.getElementById("level-up-line");
+      if (up) up.hidden = true;
     }
     document.getElementById("result-buddy").innerHTML =
       await C.faceHtml(quiz.buddy, okN >= 7 ? "happy" : "sad", 100)
@@ -284,7 +299,7 @@
   function boot() {
     WORDS = K.wordQueue();
     document.getElementById("title-level").textContent =
-      K.levelsLabel() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
+      K.levelsLabel() + "　Lv" + K.levelDisplay() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
     if (!WORDS.length) K.toast("この級の単語がまだないよ。管理画面で級を変えてね");
     document.getElementById("story-go").addEventListener("click", () => {
       document.getElementById("story").classList.remove("on");

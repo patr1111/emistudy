@@ -35,7 +35,14 @@
       <button class="btn ghost" id="map-back" type="button">ゲームの最初</button>
       <div class="pill" id="map-stat">リボン 0</div>
     </nav>
-    <h1 class="kid-h">おかいものマップ</h1>
+    <h1 class="kid-h">おかいものマップ　<span id="map-lv">Lv1</span></h1>
+    <p class="kid-hint">いまのレベルの店だけ見えるよ。3か所いったらレベルアップ！</p>
+    <div class="map-prize" id="map-prize" hidden>
+      <p class="map-prize-lab" data-map-prize-lab>このレベルをクリアしたら</p>
+      <div class="prize-fallback" data-map-prize-fallback>🎁</div>
+      <img data-map-prize-img alt="レベルのごほうび" style="display:none" />
+      <p data-map-prize-msg></p>
+    </div>
     <div class="map-grid" id="map-grid"></div>
   </section>
 
@@ -80,11 +87,20 @@
       <div class="quiz-banner"><img src="img/scene-gift.jpg" alt="" /></div>
       <div id="result-buddy" style="margin:8px 0"></div>
       <div class="english" id="score-big">0</div>
+      <p class="level-up-line" id="level-up-line" hidden></p>
       <p class="sub" id="result-msg"></p>
       <div class="prize">
-        <div class="prize-fallback" data-prize-fallback>🎁</div>
-        <img data-prize-img alt="ごほうび" style="display:none" />
-        <p data-prize-msg></p>
+        <div class="prize-near" data-prize-near>
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ごほうび" style="display:none" />
+          <p data-prize-msg></p>
+        </div>
+        <div class="prize-far" data-prize-far hidden>
+          <p class="prize-far-lab" data-prize-far-lab>全部終わったら</p>
+          <div class="prize-fallback" data-prize-far-fallback>🎁</div>
+          <img data-prize-far-img alt="全部クリアのごほうび" style="display:none" />
+          <p data-prize-far-msg></p>
+        </div>
       </div>
       <div id="result-review"></div>
       <div class="btn-row">
@@ -139,7 +155,8 @@
       <p class="guide-kicker">おかいものライブ</p>
       <h2>進め方</h2>
       <ol>
-        <li>マップで場所を選びます。1つの場所はアイコンが5こ。終わったこには×がつきます。</li>
+        <li>いまのレベルの店が3か所だけ出ます。1つの店はアイコンが5こ（最後のレベルは少ないことがあります）。終わったこには×がつきます。</li>
+        <li>3か所おわるとレベルアップします。次のレベルの店は、そのあと見えます。</li>
         <li>一緒に行く仲間を1人選ぶと、短い物語のあと10問が始まります。</li>
         <li>英語を見て、日本語を6つの中から選びます。紛らわしい引っかけはありません。</li>
         <li>正解した語はクリアになり、おかいもの・冒険・対戦のどれで遊んでも同じ進みになります。まちがえた語は「たすけてリスト」に残ります。</li>

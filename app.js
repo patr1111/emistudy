@@ -4,6 +4,11 @@
   const IMG_STORE = "files";
   const ROUND = 10;
   const PLACE_SIZE = 50;
+  const LEVEL_WORDS = 150;
+  const SHOP_PLACES_PER_LEVEL = 3;
+  const RESCUE_STOPS_PER_LEVEL = 5;
+  const RESCUE_ROUNDS_PER_STOP = 3;
+  const RACE_GOAL = 5;
   const LEVELS = [
     { id: "g4", name: "4級ぐらい" },
     { id: "g3", name: "3級ぐらい" },
@@ -40,6 +45,9 @@
     hideRescueGuide: false,
     hideBattleGuide: false,
     prizeOn: true,
+    prizeAllClearOn: true,
+    prizeLevelOn: false,
+    levelPrizeTexts: {},
     battleParentLevels: ["pre2"],
     names: Object.assign({}, DEFAULT_NAMES)
   };
@@ -88,6 +96,9 @@
     if (!s.shopPrizeText) s.shopPrizeText = s.prizeText || DEFAULT_SETTINGS.shopPrizeText;
     if (!s.rescuePrizeText) s.rescuePrizeText = s.prizeText || DEFAULT_SETTINGS.rescuePrizeText;
     if (typeof s.prizeOn !== "boolean") s.prizeOn = true;
+    if (typeof s.prizeAllClearOn !== "boolean") s.prizeAllClearOn = true;
+    if (typeof s.prizeLevelOn !== "boolean") s.prizeLevelOn = false;
+    if (!s.levelPrizeTexts || typeof s.levelPrizeTexts !== "object") s.levelPrizeTexts = {};
     s.names = Object.assign({}, DEFAULT_NAMES, s.names || {});
     s.kanji = s.kanji || "simple";
     const ids = CHAR_BY_TASTE[s.taste] || CHAR_BY_TASTE.kawaii;
@@ -568,6 +579,149 @@
     const info = placeStepInfo(place);
     unClearEns(info.slice.slice(fromStep * ROUND).map((w) => w.en));
   }
+  function clearedInQueue() {
+    const q = wordQueue();
+    const done = new Set(getProgress().clearedEns || []);
+    return q.filter((w) => done.has(w.en)).length;
+  }
+  function levelCount() {
+    const n = wordQueue().length;
+    return Math.max(1, Math.ceil(n / LEVEL_WORDS));
+  }
+  function currentLevelIndex() {
+    const n = wordQueue().length;
+    if (!n) return 0;
+    const c = clearedInQueue();
+    if (c >= n) return Math.max(0, Math.ceil(n / LEVEL_WORDS) - 1);
+    return Math.floor(c / LEVEL_WORDS);
+  }
+  function levelDisplay() { return currentLevelIndex() + 1; }
+  function levelJustCleared(beforeCount, afterCount) {
+    const n = wordQueue().length;
+    if (afterCount <= beforeCount) return false;
+    if (afterCount >= n && beforeCount < n) return true;
+    return Math.floor(afterCount / LEVEL_WORDS) > Math.floor(beforeCount / LEVEL_WORDS);
+  }
+  function completedLevelDisplay(beforeCount, afterCount) {
+    if (!levelJustCleared(beforeCount, afterCount)) return 0;
+    const n = wordQueue().length;
+    if (afterCount >= n) return Math.max(1, Math.ceil(n / LEVEL_WORDS));
+    return Math.floor(afterCount / LEVEL_WORDS);
+  }
+  function shopPlaceRange(lv) {
+    const start = (typeof lv === "number" ? lv : currentLevelIndex()) * SHOP_PLACES_PER_LEVEL;
+    const end = Math.min(placeCount(), start + SHOP_PLACES_PER_LEVEL);
+    return { start: start, end: end };
+  }
+  function rescueRoundsPerLevel() { return RESCUE_STOPS_PER_LEVEL * RESCUE_ROUNDS_PER_STOP; }
+  function rescueStopCount(lv) {
+    const startRound = (typeof lv === "number" ? lv : currentLevelIndex()) * rescueRoundsPerLevel();
+    const totalRounds = Math.floor(wordQueue().length / ROUND);
+    const remaining = Math.max(0, totalRounds - startRound);
+    if (remaining <= 0) return 1;
+    return Math.min(RESCUE_STOPS_PER_LEVEL, Math.ceil(remaining / RESCUE_ROUNDS_PER_STOP));
+  }
+  function rescueStopInfo(lv, stop) {
+    const startRound = lv * rescueRoundsPerLevel() + stop * RESCUE_ROUNDS_PER_STOP;
+    const totalRounds = Math.floor(wordQueue().length / ROUND);
+    const need = Math.max(0, Math.min(RESCUE_ROUNDS_PER_STOP, totalRounds - startRound));
+    const q = wordQueue();
+    const done = new Set(getProgress().clearedEns || []);
+    let doneRounds = 0;
+    for (let i = 0; i < need; i++) {
+      const chunk = q.slice((startRound + i) * ROUND, (startRound + i + 1) * ROUND);
+      if (chunk.length && chunk.every((w) => done.has(w.en))) doneRounds += 1;
+      else break;
+    }
+    return {
+      startRound: startRound,
+      need: need,
+      doneRounds: doneRounds,
+      slice: q.slice(startRound * ROUND, (startRound + need) * ROUND)
+    };
+  }
+  function rescueCursor() {
+    const lv = currentLevelIndex();
+    const nStops = rescueStopCount(lv);
+    if (allWordsCleared()) {
+      const last = rescueStopInfo(lv, nStops - 1);
+      return { level: lv, stop: nStops - 1, doneRounds: last.need, need: last.need, nStops: nStops, allDone: true };
+    }
+    for (let s = 0; s < nStops; s++) {
+      const info = rescueStopInfo(lv, s);
+      if (info.need <= 0) continue;
+      if (info.doneRounds < info.need) {
+        return { level: lv, stop: s, doneRounds: info.doneRounds, need: info.need, nStops: nStops, allDone: false };
+      }
+    }
+    const last = rescueStopInfo(lv, nStops - 1);
+    return { level: lv, stop: nStops - 1, doneRounds: last.need, need: last.need, nStops: nStops, allDone: false };
+  }
+  function unClearRescueFromStop(lv, fromStop) {
+    const info = rescueStopInfo(lv, fromStop);
+    const q = wordQueue();
+    unClearEns(q.slice(info.startRound * ROUND).map((w) => w.en));
+  }
+  function prizeFlags() {
+    const st = getSettings();
+    const on = st.prizeOn !== false;
+    return {
+      on: on,
+      all: on && st.prizeAllClearOn !== false,
+      level: on && !!st.prizeLevelOn
+    };
+  }
+  function levelPrizeKey(lv1) { return "prize-level-" + lv1; }
+  function levelPrizeText(lv1) {
+    const t = ((getSettings().levelPrizeTexts || {})[String(lv1)] || "").trim();
+    return t || "このレベルをクリアしたら、このご褒美がもらえるよ。";
+  }
+  function fillPrizeImg(img, fallback, src) {
+    const showFallback = () => {
+      if (img) {
+        img.removeAttribute("src");
+        img.style.display = "none";
+      }
+      if (fallback) fallback.style.display = "grid";
+    };
+    if (src && img) {
+      img.onload = () => {
+        img.style.display = "inline-block";
+        if (fallback) fallback.style.display = "none";
+      };
+      img.onerror = showFallback;
+      img.src = src;
+    } else {
+      showFallback();
+    }
+  }
+  function previewPrize(box, key, text) {
+    if (!box) return;
+    box.hidden = false;
+    const img = box.querySelector("[data-prize-img]");
+    const fallback = box.querySelector("[data-prize-fallback]");
+    const msg = box.querySelector("[data-prize-msg]");
+    getImage(key).then((src) => fillPrizeImg(img, fallback, src)).catch(() => fillPrizeImg(img, fallback, ""));
+    if (msg) msg.innerHTML = esc(text || "").replace(/\n/g, "<br>");
+  }
+  async function renderMapPrize(box) {
+    if (!box) return;
+    const flags = prizeFlags();
+    if (!flags.level || allWordsCleared()) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    const lv = levelDisplay();
+    const lab = box.querySelector("[data-map-prize-lab]");
+    const msg = box.querySelector("[data-map-prize-msg]");
+    const img = box.querySelector("[data-map-prize-img]");
+    const fallback = box.querySelector("[data-map-prize-fallback]");
+    if (lab) lab.textContent = "Lv" + lv + "をクリアしたら";
+    if (msg) msg.textContent = levelPrizeText(lv);
+    const src = await getImage(levelPrizeKey(lv));
+    fillPrizeImg(img, fallback, src);
+  }
   function marksRowHtml(items) {
     let html = "<div class=\"step-marks\">";
     (items || []).forEach((it) => {
@@ -900,40 +1054,56 @@
   }
   function showPrize(box, allDone, game) {
     if (!box) return;
-    const st = getSettings();
-    if (!st.prizeOn) {
+    const flags = prizeFlags();
+    if (!flags.on || (!flags.all && !flags.level)) {
       box.hidden = true;
       return;
     }
     box.hidden = false;
-    const img = box.querySelector("[data-prize-img]");
-    const fallback = box.querySelector("[data-prize-fallback]");
-    const msg = box.querySelector("[data-prize-msg]");
-    const key = game === "rescue" ? "prize-rescue" : "prize-shop";
-    const text = game === "rescue" ? st.rescuePrizeText : st.shopPrizeText;
-    const showFallback = () => {
-      if (img) {
-        img.removeAttribute("src");
-        img.style.display = "none";
-      }
-      if (fallback) fallback.style.display = "grid";
-    };
-    getImage(key).then((src) => {
-      if (src && img) {
-        img.onload = () => {
-          img.style.display = "inline-block";
-          if (fallback) fallback.style.display = "none";
-        };
-        img.onerror = showFallback;
-        img.src = src;
-      } else {
-        showFallback();
-      }
-    }).catch(showFallback);
-    if (msg) {
-      msg.innerHTML = allDone
+    const st = getSettings();
+    const allDoneNow = !!allDone || allWordsCleared();
+    const cleared = clearedInQueue();
+    const n = wordQueue().length;
+    let gotLevel = 0;
+    if (allDoneNow) gotLevel = levelCount();
+    else if (cleared > 0 && cleared % LEVEL_WORDS === 0) gotLevel = cleared / LEVEL_WORDS;
+    const nearLevel = gotLevel || levelDisplay();
+    const allKey = game === "rescue" ? "prize-rescue" : "prize-shop";
+    const allText = game === "rescue" ? st.rescuePrizeText : st.shopPrizeText;
+    const near = box.querySelector("[data-prize-near]") || box;
+    const far = box.querySelector("[data-prize-far]");
+    const useLevelNear = flags.level;
+    const nearKey = useLevelNear ? levelPrizeKey(nearLevel) : allKey;
+    let nearText;
+    if (useLevelNear) {
+      nearText = gotLevel
+        ? "レベル" + gotLevel + "クリア！ご褒美をGETだよ！"
+        : levelPrizeText(nearLevel);
+    } else {
+      nearText = allDoneNow
         ? "全部できた！ご褒美をGETだよ！"
-        : esc(text || DEFAULT_SETTINGS.shopPrizeText).replace(/\n/g, "<br>");
+        : (allText || DEFAULT_SETTINGS.shopPrizeText);
+    }
+    const nearImg = near.querySelector("[data-prize-img]");
+    const nearFb = near.querySelector("[data-prize-fallback]");
+    const nearMsg = near.querySelector("[data-prize-msg]");
+    getImage(nearKey).then((src) => fillPrizeImg(nearImg, nearFb, src)).catch(() => fillPrizeImg(nearImg, nearFb, ""));
+    if (nearMsg) nearMsg.innerHTML = esc(nearText || "").replace(/\n/g, "<br>");
+    if (far) {
+      const showFar = flags.all && flags.level;
+      far.hidden = !showFar;
+      if (showFar) {
+        const lab = far.querySelector("[data-prize-far-lab]");
+        if (lab) lab.textContent = allDoneNow ? "全部クリアのご褒美" : "全部終わったら";
+        const farImg = far.querySelector("[data-prize-far-img]") || far.querySelector("[data-prize-img]");
+        const farFb = far.querySelector("[data-prize-far-fallback]") || far.querySelector("[data-prize-fallback]");
+        const farMsg = far.querySelector("[data-prize-far-msg]");
+        const farText = allDoneNow
+          ? "全部できた！ご褒美をGETだよ！"
+          : (allText || DEFAULT_SETTINGS.shopPrizeText);
+        getImage(allKey).then((src) => fillPrizeImg(farImg, farFb, src)).catch(() => fillPrizeImg(farImg, farFb, ""));
+        if (farMsg) farMsg.innerHTML = esc(farText).replace(/\n/g, "<br>");
+      }
     }
   }
 
@@ -962,13 +1132,17 @@
   migrateImagesOnce().catch(() => {});
 
   global.Kirameki = {
-    STORE_KEY, ROUND, PLACE_SIZE, CHAR_IDS, CHAR_BY_TASTE, LEVELS, KANJI_MODES, TASTES, DEFAULT_SETTINGS, DEFAULT_NAMES, GAMES,
+    STORE_KEY, ROUND, PLACE_SIZE, LEVEL_WORDS, SHOP_PLACES_PER_LEVEL, RESCUE_STOPS_PER_LEVEL, RESCUE_ROUNDS_PER_STOP, RACE_GOAL,
+    CHAR_IDS, CHAR_BY_TASTE, LEVELS, KANJI_MODES, TASTES, DEFAULT_SETTINGS, DEFAULT_NAMES, GAMES,
     today, esc, toast, applyTaste,
     getSettings, saveSettings, getProgress, saveProgress, getGame, saveGame, getShop, saveShop, getRescue, saveRescue, resetAll,
-    displayName, levelsLabel, parentLevelsLabel, setImage, getImage, shrinkFile,
+    displayName, levelsLabel, parentLevelsLabel, setImage, getImage, shrinkFile, previewPrize,
     filteredWords, parentWordPool, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
     unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
+    clearedInQueue, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
+    shopPlaceRange, rescueStopCount, rescueStopInfo, rescueCursor, unClearRescueFromStop,
+    prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, downloadMissExcel,

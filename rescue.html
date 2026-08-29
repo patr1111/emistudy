@@ -28,7 +28,14 @@
       <button class="btn ghost" id="go-miss" type="button">たすけてリスト</button>
       <button class="btn gold" id="save-xls" type="button">リストをほぞん</button>
     </div>
-    <h1 class="kid-h">ぼうけんマップ</h1>
+    <h1 class="kid-h">ぼうけんマップ　<span id="map-lv">Lv1</span></h1>
+    <p class="kid-hint">いまのレベルの道だけ見えるよ。1か所を3回やったら次へ。5か所でレベルアップ！</p>
+    <div class="map-prize" id="map-prize" hidden>
+      <p class="map-prize-lab" data-map-prize-lab>このレベルをクリアしたら</p>
+      <div class="prize-fallback" data-map-prize-fallback>🎁</div>
+      <img data-map-prize-img alt="レベルのごほうび" style="display:none" />
+      <p data-map-prize-msg></p>
+    </div>
     <div id="journey-marks" class="journey-marks"></div>
     <div class="path-map">
       <svg id="path-svg" class="path-svg" aria-hidden="true">
@@ -84,12 +91,21 @@
       <div class="quiz-banner"><img src="img/scene-forest.jpg" alt="" /></div>
       <div id="result-faces" class="buddy-row"></div>
       <div class="english" id="score-big">0</div>
+      <p class="level-up-line" id="level-up-line" hidden></p>
       <p class="sub" id="result-msg"></p>
       <div id="result-review"></div>
       <div class="prize">
-        <div class="prize-fallback" data-prize-fallback>🎁</div>
-        <img data-prize-img alt="ごほうび" style="display:none" />
-        <p data-prize-msg></p>
+        <div class="prize-near" data-prize-near>
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ごほうび" style="display:none" />
+          <p data-prize-msg></p>
+        </div>
+        <div class="prize-far" data-prize-far hidden>
+          <p class="prize-far-lab" data-prize-far-lab>全部終わったら</p>
+          <div class="prize-fallback" data-prize-far-fallback>🎁</div>
+          <img data-prize-far-img alt="全部クリアのごほうび" style="display:none" />
+          <p data-prize-far-msg></p>
+        </div>
       </div>
       <div class="btn-row">
         <button class="btn" type="button" id="next-stage">マップへ</button>
@@ -106,9 +122,17 @@
       <div id="end-faces" class="buddy-row"></div>
       <p class="kid-line" id="end-story"></p>
       <div class="prize">
-        <div class="prize-fallback" data-prize-fallback>🎁</div>
-        <img data-prize-img alt="ごほうび" style="display:none" />
-        <p data-prize-msg></p>
+        <div class="prize-near" data-prize-near>
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ごほうび" style="display:none" />
+          <p data-prize-msg></p>
+        </div>
+        <div class="prize-far" data-prize-far hidden>
+          <p class="prize-far-lab" data-prize-far-lab>全部終わったら</p>
+          <div class="prize-fallback" data-prize-far-fallback>🎁</div>
+          <img data-prize-far-img alt="全部クリアのごほうび" style="display:none" />
+          <p data-prize-far-msg></p>
+        </div>
       </div>
       <div class="btn-row">
         <button class="btn gold" type="button" id="end-save">リストをほぞん</button>
@@ -132,7 +156,8 @@
       <p class="guide-kicker">ともだちをたすける</p>
       <h2>進め方</h2>
       <ol>
-        <li>1本の道のうえにある5つの場所を、いまの場所から順に進みます。できた場所のアイコンには×がつきます。各場所は10問、選択肢は6つです。おかいもので進めた分も、ここに反映されます。</li>
+        <li>いまのレベルの道が5か所だけ出ます。1か所を10問×3回やったら次の場所へ進みます。できた回数には×がつきます。おかいもので進めた分も、ここに反映されます。</li>
+        <li>5か所おわるとレベルアップします。次のレベルの道は、そのあと見えます。場所の名前は、レベルが上がっても同じ5つです。</li>
         <li>7問以上正解すると、その場所のどうぐが手に入ります。</li>
         <li>クリアした語はほかのゲームでも出ません。マップの進みもおかいものと共通です。まちがえた語は「たすけてリスト」に残ります。ここからもやり直せます。</li>
         <li>終わった場所の「記録を消す」で、そこからやり直せます。まちがいリストはそのままです。</li>

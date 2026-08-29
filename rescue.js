@@ -24,36 +24,38 @@
     return list[Math.min(Math.max(i, 0), list.length - 1)];
   }
   function cursor() {
-    if (K.allWordsCleared()) {
-      const last = Math.max(0, K.placeCount() - 1);
-      const info = K.placeStepInfo(last);
-      return { shopPlace: last, step: info.need, need: info.need, allDone: true };
-    }
-    const shopPlace = K.unlockedPlace();
-    const info = K.placeStepInfo(shopPlace);
-    return { shopPlace: shopPlace, step: info.doneRounds, need: info.need, allDone: false };
+    return K.rescueCursor();
   }
   function livePlace() {
-    return (quiz && typeof quiz.place === "number") ? quiz.place : cursor().step;
+    return (quiz && typeof quiz.place === "number") ? quiz.place : cursor().stop;
   }
   function renderMap() {
     const grid = document.getElementById("rescue-map");
     if (!grid) return;
     grid.innerHTML = "";
     const cur = cursor();
+    const list = places();
+    const lvEl = document.getElementById("map-lv");
+    if (lvEl) lvEl.textContent = "Lv" + (cur.level + 1);
     const jm = document.getElementById("journey-marks");
     if (jm) {
-      jm.innerHTML = K.marksRowHtml(places().map((place, i) => ({
-        mark: place.mark || "●",
-        done: cur.allDone || i < cur.step,
-        now: !cur.allDone && i === cur.step && i < cur.need
-      })));
+      jm.innerHTML = K.marksRowHtml(list.slice(0, cur.nStops).map((place, i) => {
+        const info = K.rescueStopInfo(cur.level, i);
+        const done = cur.allDone || i < cur.stop || (i === cur.stop && info.doneRounds >= info.need);
+        return {
+          mark: place.mark || "●",
+          done: done,
+          now: !cur.allDone && i === cur.stop
+        };
+      }));
     }
-    places().forEach((place, i) => {
+    for (let i = 0; i < cur.nStops; i++) {
+      const place = placeAt(i);
+      const info = K.rescueStopInfo(cur.level, i);
       const el = document.createElement("button");
       el.type = "button";
-      const now = !cur.allDone && i === cur.step && i < cur.need;
-      const done = cur.allDone || i < cur.step;
+      const now = !cur.allDone && i === cur.stop;
+      const done = cur.allDone || i < cur.stop || (i === cur.stop && info.doneRounds >= info.need && !now);
       const lock = !done && !now;
       el.className = "path-stop" + (now ? " now" : "") + (done ? " done" : "") + (lock ? " lock" : "");
       el.innerHTML =
@@ -62,8 +64,9 @@
           "<img src='img/" + place.scene + ".jpg' alt='' />" +
         "</span>" +
         "<span class='path-info'><span class='nm'>" + place.name + "</span>" +
-        "<span class='st'>" + K.marksRowHtml([{ mark: place.mark || "●", done: done, now: now }]) + "</span></span>";
-      if (done && (!cur.allDone || i < cur.need)) {
+        "<span class='st'>" + K.stepMarksHtml(place.mark || "●", info.doneRounds, info.need) + "</span></span>";
+      const anyDone = info.doneRounds > 0 || (i < cur.stop);
+      if (anyDone && (done || now)) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
         redo.textContent = "記録を消す";
@@ -72,6 +75,8 @@
           redoFrom(i);
         });
         el.querySelector(".path-info").appendChild(redo);
+      }
+      if (done && !now) {
         el.addEventListener("click", () => redoFrom(i));
       } else if (now) {
         el.addEventListener("click", () => startStage());
@@ -79,11 +84,12 @@
         el.addEventListener("click", () => K.toast("まえのばしょから いこう"));
       }
       grid.appendChild(el);
-    });
+    }
     const endingRow = document.getElementById("ending-row");
     if (endingRow) endingRow.hidden = !cur.allDone;
     updateOpenHint();
     layoutPath();
+    K.renderMapPrize(document.getElementById("map-prize"));
   }
   function layoutPath() {
     const wrap = document.querySelector(".path-map");
@@ -113,20 +119,19 @@
       base.setAttribute("y2", String(ys[ys.length - 1]));
     }
     if (done) {
-      const di = Math.min(cursor().step, ys.length - 1);
+      const di = Math.min(cursor().stop, ys.length - 1);
       done.setAttribute("x1", String(cx));
       done.setAttribute("x2", String(cx));
       done.setAttribute("y1", String(ys[0]));
       done.setAttribute("y2", String(ys[di]));
-      done.setAttribute("opacity", cursor().step > 0 || cursor().allDone ? "1" : "0");
+      done.setAttribute("opacity", cursor().stop > 0 || cursor().allDone ? "1" : "0");
     }
   }
   function redoFrom(i) {
     const cur = cursor();
-    if (!cur.allDone && i >= cur.step) return;
-    if (!confirm(placeAt(i).name + "の記録を消す？この先のクリアも消えるよ。おかいものの同じ場所も戻るよ。まちがいリストはそのまま残るよ。")) return;
-    K.unClearPlaceFromStep(cur.shopPlace, i);
-    state.tools = (state.tools || []).slice(0, i);
+    if (!cur.allDone && i > cur.stop) return;
+    if (!confirm(placeAt(i).name + "の記録を消す？この先のクリアも消えるよ。おかいものも同じ進みに戻るよ。まちがいリストはそのまま残るよ。")) return;
+    K.unClearRescueFromStop(cur.level, i);
     persist();
     K.toast(placeAt(i).name + "の記録を消したよ");
     renderMap();
@@ -137,8 +142,8 @@
     const cur = cursor();
     if (cur.allDone) {
       hint.textContent = "全部できたよ。できたばしょの「記録を消す」でもう一度できるよ。";
-    } else if (cur.step > 0) {
-      hint.textContent = "おかいものも おなじ すすみだよ。できたばしょの「記録を消す」で、そこからもう一度できるよ。";
+    } else if (cur.stop > 0 || cur.doneRounds > 0) {
+      hint.textContent = "おかいものも おなじ すすみだよ。1か所を3回やったら次へ。できたばしょの「記録を消す」で、そこからもう一度できるよ。";
     } else {
       hint.textContent = "おかいものも おなじ すすみだよ。かがやいてるばしょから、ひとつずつ いこう。";
     }
@@ -275,6 +280,7 @@
     const resultBanner = document.querySelector("#result .quiz-banner img");
     if (resultBanner) resultBanner.src = review ? "img/illust-rescue.jpg" : ("img/" + place.scene + ".jpg");
     if (!review) {
+      const before = K.clearedInQueue();
       K.markCleared(quiz.items);
       let msg = okN + "もん できたよ。";
       if (okN >= TOOL_NEED) {
@@ -285,9 +291,18 @@
       }
       persist();
       K.maybeAutoExport();
+      const after = K.clearedInQueue();
+      const leveled = K.levelJustCleared(before, after);
+      const up = document.getElementById("level-up-line");
+      if (up) {
+        up.hidden = !(leveled && !K.allWordsCleared());
+        if (!up.hidden) up.textContent = "ぼうけんレベルが上がった！　Lv" + K.levelDisplay();
+      }
       document.getElementById("result-msg").textContent = msg;
       document.getElementById("score-big").textContent = (place.mark || "★").repeat(okN);
     } else {
+      const up = document.getElementById("level-up-line");
+      if (up) up.hidden = true;
       document.getElementById("result-msg").textContent = okN + "もん できたよ。";
       document.getElementById("score-big").textContent = "💌".repeat(okN);
     }
@@ -316,9 +331,9 @@
       K.toast("出る単語がもうないよ");
       return;
     }
-    document.getElementById("stageTitle").textContent = placeAt(cur.step).name;
+    document.getElementById("stageTitle").textContent = placeAt(cur.stop).name;
     roundToken += 1;
-    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.step, shopPlace: cur.shopPlace };
+    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.stop, level: cur.level };
     await renderFaces("play-faces");
     show("play");
     renderQuestion();
@@ -333,8 +348,8 @@
   async function boot() {
     WORDS = K.wordQueue();
     document.getElementById("title-level").textContent =
-      K.levelsLabel() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
-    document.getElementById("open-story").textContent = pal() + "の ところまで、ばしょを ひとつずつ いこう。おかいものも おなじ すすみだよ。";
+      K.levelsLabel() + "　Lv" + K.levelDisplay() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
+    document.getElementById("open-story").textContent = pal() + "の ところまで、いまのレベルのばしょを ひとつずつ いこう。1か所を3回やったら次へ。おかいものも おなじ すすみだよ。";
     await renderFaces("open-faces");
     renderMap();
     if (!WORDS.length) K.toast("この級の単語がまだないよ。管理画面で級を変えてね");

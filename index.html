@@ -50,7 +50,7 @@
           <h2>コンセプト</h2>
           <div class="lp-story">
             <p>級が上がると、日本語でも意味が取れない抽象語が増えます。単語を淡々と覚えるのも、子どもには楽しくありません。</p>
-            <p>このサイトは、日常で意味のわかる語を、ゲームで増やします。自分や友達の写真を入れて遊べます。全部終わったら渡すご褒美の写真を出しておけば、途中でも目標が見えます。</p>
+            <p>このサイトは、日常で意味のわかる語を、ゲームで増やします。自分や友達の写真を入れて遊べます。全部終わったときのご褒美と、レベルごとのご褒美を、管理画面で別々に出せます。</p>
             <p>欲しいものが見当たらなかったので、個人で作りました。不具合はご容赦ください。直してほしい点は、<a href="#board">掲示板</a>へお願いします。</p>
           </div>
           <div class="lp-points">
@@ -96,32 +96,32 @@
       <div class="lp-wrap">
         <p class="lp-kicker dark">Play</p>
         <h2>ゲームを選ぶ</h2>
-        <p class="lp-intro">単語の進みは、どのゲームでも共通です。おかいもので進めた分は冒険のマップにもつき、冒険で進めた分はおかいものにもつきます。気分でどれを選んでも、ゴールに向かいます。</p>
+        <p class="lp-intro">単語の進みは、どのゲームでも共通です。おかいもので進めた分は冒険のマップにもつき、冒険で進めた分はおかいものにもつきます。いまのレベルだけ店や道が見えます。気分でどれを選んでも、ゴールに向かいます。</p>
         <div class="lp-games">
           <a class="lp-game" href="shop.html">
             <img src="img/game-shop.jpg" alt="おかいものライブのイメージ" />
             <div class="lp-game-body">
-              <span class="lp-game-tag">10問ずつ</span>
+              <span class="lp-game-tag">レベルごとに3か所</span>
               <h3>おかいものライブ</h3>
-              <p>仲間と場所を選んでお使いへ。正解するとリボンが貯まります。</p>
+              <p>仲間と店を選んでお使いへ。いまのレベルの店が3か所。3か所おわるとレベルアップします。</p>
               <span class="lp-game-go">ゲーム画面へ</span>
             </div>
           </a>
           <a class="lp-game" href="rescue.html">
             <img src="img/game-rescue.jpg" alt="ともだちをたすけるのイメージ" />
             <div class="lp-game-body">
-              <span class="lp-game-tag">場所を5つ</span>
+              <span class="lp-game-tag">レベルごとに5か所</span>
               <h3>ともだちをたすける</h3>
-              <p>マップの道をひとつずつ進み、どうぐを集めて友達のところへ向かいます。</p>
+              <p>いまのレベルの道を5か所。1か所を3回やってから次へ。5か所でレベルアップします。</p>
               <span class="lp-game-go">ゲーム画面へ</span>
             </div>
           </a>
           <a class="lp-game" href="battle.html">
             <img src="img/game-battle.jpg" alt="パパやママと戦おうのイメージ" />
             <div class="lp-game-body">
-              <span class="lp-game-tag">親子で対戦</span>
+              <span class="lp-game-tag">かけっこ対戦</span>
               <h3>パパやママと戦おう</h3>
-              <p>同じ端末で交互に10問。まだ出していない単語で正答率を競います。パパ・ママの級だけ別にできます。こどものまちがいはたすけてリストに残ります。</p>
+              <p>同じ端末で交互に10問。正解したほうだけ進み、先にゴールしたほうが勝ちです。パパ・ママの級だけ別にできます。</p>
               <span class="lp-game-go">ゲーム画面へ</span>
             </div>
           </a>
@@ -138,7 +138,7 @@
             <span class="lp-num">01</span>
             <div>
               <h3>管理画面を開く</h3>
-              <p>難易度（級は複数可）、漢字の量、雰囲気、ご褒美の写真を決めます。抽象的な語を外すこともできます。</p>
+              <p>難易度（級は複数可）、漢字の量、雰囲気、ご褒美の種類と写真を決めます。抽象的な語を外すこともできます。</p>
             </div>
           </li>
           <li>
@@ -151,8 +151,8 @@
           <li>
             <span class="lp-num">03</span>
             <div>
-              <h3>10問ずつ進める</h3>
-              <p>英語を見て日本語を6択で選びます。まちがえた語はリストに残り、クリアした語はどのゲームでも出ません。おかいものと冒険のマップも、同じ進みです。</p>
+              <h3>10問ずつ、レベルで区切る</h3>
+              <p>英語を見て日本語を6択で選びます。150語で1レベルです。いまのレベルだけマップに出ます。まちがえた語はリストに残り、クリアした語はどのゲームでも出ません。</p>
             </div>
           </li>
           <li>
@@ -183,43 +183,29 @@
             <li>
               <time datetime="2026-08-29">2026.08.29</time>
               <div>
-                <h3>おかいものと冒険の進みを揃え、対戦は親の級を別に選べます</h3>
-                <p>どのゲームで遊んでもマップの進みは同じです。親子対戦では、パパ・ママの級だけ子どもと別にできます。</p>
+                <h3>いまのレベルだけ、店と道が出ます</h3>
+                <p>150語で1レベルです。おかいものは店が3か所、冒険は道が5か所（1か所を3回）だけ見えます。次の店や道は、今のレベルが終わってから出ます。どのゲームで遊んでも、同じ進みです。</p>
               </div>
             </li>
             <li>
               <time datetime="2026-08-29">2026.08.29</time>
               <div>
-                <h3>親子対戦は、まだ出していない単語で遊ぶ形にしました</h3>
-                <p>モード選択はやめました。子どもがまちがえた語はたすけてリストに入り、親の正誤は記録しません。</p>
+                <h3>ご褒美は、レベルごとにも渡せます</h3>
+                <p>管理画面で、全部終わったときのご褒美と、レベルごとのご褒美を別々に出せます。両方出すときは、次にもらえるほうが大きく出ます。写真はこの端末だけに残ります。</p>
               </div>
             </li>
             <li>
-              <time datetime="2026-08-28">2026.08.28</time>
+              <time datetime="2026-08-29">2026.08.29</time>
               <div>
-                <h3>第三のゲーム「パパやママと戦おう」を追加しました</h3>
-                <p>親子で交互に10問を答えて、正答率を競えます。</p>
-              </div>
-            </li>
-            <li>
-              <time datetime="2026-08-27">2026.08.27</time>
-              <div>
-                <h3>一般公開版を公開しました</h3>
-                <p>おかいものライブと、ともだちをたすける、に加え、親子対戦もあります。ログインは不要です。</p>
+                <h3>親子対戦はかけっこです</h3>
+                <p>正解した人だけ進み、先にゴールしたほうが勝ちです。パパ・ママの級は、最初の画面で子どもと別に選べます。公式の英検問題ではないので、同じ級の公式問題よりやさしめです。</p>
               </div>
             </li>
             <li>
               <time datetime="2026-08-27">2026.08.27</time>
               <div>
-                <h3>級は複数選択、漢字は3段階</h3>
-                <p>4級／3級／準2級／2級／準1級の「ぐらい」から選べます。漢字なし、簡単な漢字あり、漢字あり、を切り替えられます。</p>
-              </div>
-            </li>
-            <li>
-              <time datetime="2026-08-22">2026.08.22</time>
-              <div>
-                <h3>ご褒美と仲間の写真を、この端末だけに保存</h3>
-                <p>写真はサーバーに送りません。記録のJSONには含まれません。この端末のブラウザにだけ残ります。</p>
+                <h3>登録なし・完全無料です</h3>
+                <p>ログインもお支払いは不要です。記録と写真は、この端末のブラウザにだけ残ります。級は複数選べます。漢字の量も変えられます。</p>
               </div>
             </li>
           </ul>
@@ -338,9 +324,20 @@
         <input type="checkbox" id="prize-toggle" />
         <label for="prize-toggle">ご褒美を使う</label>
       </div>
-      <p class="sub">オフにすると、ゲームの結果にご褒美の写真も文言も出ません。オンのときは、全部終わる前から写真を出して目標にできます。</p>
+      <p class="sub">オフにすると、ゲームの結果にご褒美の写真も文言も出ません。オンのときは、全部クリアとレベルごとのどちらか、または両方を出せます。両方出すときは、次にもらえるレベルのご褒美を大きく、全部クリアは小さく出します。</p>
       <div id="prize-fields">
-      <h3 class="prize-sub">おかいもの</h3>
+      <div class="field toggle-row">
+        <input type="checkbox" id="prize-all-toggle" />
+        <label for="prize-all-toggle">全部クリアのご褒美を出す</label>
+      </div>
+      <div class="field toggle-row">
+        <input type="checkbox" id="prize-level-toggle" />
+        <label for="prize-level-toggle">レベルごとのご褒美を出す</label>
+      </div>
+      <p class="sub">レベルはゲーム共通です。150語で1レベル（おかいものは店3か所、冒険は場所5か所×3回）。画像はこの端末のブラウザにだけ残ります。JSONには含まれません。</p>
+
+      <div id="allclear-fields">
+      <h3 class="prize-sub">全部クリア（おかいもの）</h3>
       <div class="field">
         <span class="lab">ご褒美の文言</span>
         <input type="text" id="shop-prize-text" maxlength="80" />
@@ -355,7 +352,7 @@
         <button class="btn ghost" type="button" id="shop-prize-clear">画像を消す</button>
       </div>
 
-      <h3 class="prize-sub">冒険</h3>
+      <h3 class="prize-sub">全部クリア（冒険）</h3>
       <div class="field">
         <span class="lab">ご褒美の文言</span>
         <input type="text" id="rescue-prize-text" maxlength="80" />
@@ -368,6 +365,13 @@
           <img data-prize-img alt="ご褒美" style="display:none" />
         </div>
         <button class="btn ghost" type="button" id="rescue-prize-clear">画像を消す</button>
+      </div>
+      </div>
+
+      <div id="level-prize-fields">
+      <h3 class="prize-sub">レベルごとのご褒美</h3>
+      <p class="sub" id="level-prize-count"></p>
+      <div id="level-prize-slots"></div>
       </div>
       </div>
 

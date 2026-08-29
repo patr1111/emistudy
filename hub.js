@@ -167,7 +167,7 @@
       box.appendChild(wrap);
     }
   }
-  function bindPrize(textId, fileId, clearId, boxId, textKey, imgKey, game) {
+  function bindPrize(textId, fileId, clearId, boxId, textKey, imgKey) {
     document.getElementById(textId).addEventListener("change", (e) => {
       const patch = {};
       patch[textKey] = e.target.value;
@@ -178,12 +178,50 @@
       ev.target.value = "";
       if (!f) return;
       await K.setImage(imgKey, await K.shrinkFile(f));
-      K.showPrize(document.getElementById(boxId), false, game);
+      K.previewPrize(document.getElementById(boxId), imgKey, "");
     });
     document.getElementById(clearId).addEventListener("click", async () => {
       await K.setImage(imgKey, "");
-      K.showPrize(document.getElementById(boxId), false, game);
+      K.previewPrize(document.getElementById(boxId), imgKey, "");
     });
+  }
+  function renderLevelPrizeSlots() {
+    const box = document.getElementById("level-prize-slots");
+    const count = document.getElementById("level-prize-count");
+    if (!box) return;
+    const n = K.levelCount();
+    const texts = K.getSettings().levelPrizeTexts || {};
+    if (count) {
+      count.textContent = "いまの級だと Lv1〜Lv" + n + " です。150語で1レベルです。";
+    }
+    box.innerHTML = "";
+    for (let lv = 1; lv <= n; lv++) {
+      const wrap = document.createElement("div");
+      wrap.className = "level-prize-slot";
+      wrap.innerHTML =
+        "<h4>Lv" + lv + "</h4>" +
+        "<div class=\"field\"><span class=\"lab\">文言</span>" +
+        "<input type=\"text\" data-lv-text=\"" + lv + "\" maxlength=\"80\" /></div>" +
+        "<div class=\"field\"><span class=\"lab\">画像</span>" +
+        "<input type=\"file\" data-lv-file=\"" + lv + "\" accept=\"image/*\" />" +
+        "<div class=\"prize\" data-lv-box=\"" + lv + "\" style=\"margin-top:10px\">" +
+        "<div class=\"prize-fallback\" data-prize-fallback>🎁</div>" +
+        "<img data-prize-img alt=\"\" style=\"display:none\" /></div>" +
+        "<button class=\"btn ghost\" type=\"button\" data-lv-clear=\"" + lv + "\">画像を消す</button></div>";
+      const input = wrap.querySelector("[data-lv-text]");
+      input.value = texts[String(lv)] || "";
+      box.appendChild(wrap);
+      K.previewPrize(wrap.querySelector("[data-lv-box]"), K.levelPrizeKey(lv), "");
+    }
+  }
+  function syncPrizePanels() {
+    const st = K.getSettings();
+    const prizeFields = document.getElementById("prize-fields");
+    const allFields = document.getElementById("allclear-fields");
+    const lvFields = document.getElementById("level-prize-fields");
+    if (prizeFields) prizeFields.hidden = st.prizeOn === false;
+    if (allFields) allFields.hidden = st.prizeOn === false || st.prizeAllClearOn === false;
+    if (lvFields) lvFields.hidden = st.prizeOn === false || !st.prizeLevelOn;
   }
   function refresh() {
     const st = K.getSettings();
@@ -202,16 +240,20 @@
     document.getElementById("hide-rescue-guide").checked = !!st.hideRescueGuide;
     document.getElementById("hide-battle-guide").checked = !!st.hideBattleGuide;
     document.getElementById("prize-toggle").checked = st.prizeOn !== false;
-    const prizeFields = document.getElementById("prize-fields");
-    if (prizeFields) prizeFields.hidden = st.prizeOn === false;
+    const allToggle = document.getElementById("prize-all-toggle");
+    const lvToggle = document.getElementById("prize-level-toggle");
+    if (allToggle) allToggle.checked = st.prizeAllClearOn !== false;
+    if (lvToggle) lvToggle.checked = !!st.prizeLevelOn;
+    syncPrizePanels();
     document.querySelectorAll("#export-seg input").forEach((el) => {
       el.checked = (el.value === "on") === !!st.autoExport;
     });
     fillLevels();
     fillRadio(document.getElementById("kanji-seg"), K.KANJI_MODES, "kanji", st.kanji);
     fillRadio(document.getElementById("taste-seg"), K.TASTES, "taste", st.taste);
-    K.showPrize(document.getElementById("shop-prize-box"), false, "shop");
-    K.showPrize(document.getElementById("rescue-prize-box"), false, "rescue");
+    K.previewPrize(document.getElementById("shop-prize-box"), "prize-shop", "");
+    K.previewPrize(document.getElementById("rescue-prize-box"), "prize-rescue", "");
+    renderLevelPrizeSlots();
     renderAtlas();
   }
   function bind() {
@@ -232,11 +274,52 @@
       K.saveSettings({ prizeOn: e.target.checked });
       refresh();
     });
+    document.getElementById("prize-all-toggle").addEventListener("change", (e) => {
+      K.saveSettings({ prizeAllClearOn: e.target.checked });
+      refresh();
+    });
+    document.getElementById("prize-level-toggle").addEventListener("change", (e) => {
+      K.saveSettings({ prizeLevelOn: e.target.checked });
+      refresh();
+    });
+    const lvSlots = document.getElementById("level-prize-slots");
+    if (lvSlots) {
+      lvSlots.addEventListener("change", async (ev) => {
+        const textEl = ev.target.closest("[data-lv-text]");
+        const fileEl = ev.target.closest("[data-lv-file]");
+        if (textEl) {
+          const lv = textEl.getAttribute("data-lv-text");
+          const texts = Object.assign({}, K.getSettings().levelPrizeTexts || {});
+          texts[lv] = textEl.value;
+          K.saveSettings({ levelPrizeTexts: texts });
+          return;
+        }
+        if (fileEl && ev.target === fileEl) {
+          const lv = fileEl.getAttribute("data-lv-file");
+          const f = fileEl.files && fileEl.files[0];
+          fileEl.value = "";
+          if (!f) return;
+          const key = K.levelPrizeKey(lv);
+          await K.setImage(key, await K.shrinkFile(f));
+          const box = lvSlots.querySelector("[data-lv-box=\"" + lv + "\"]");
+          K.previewPrize(box, key, "");
+        }
+      });
+      lvSlots.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-lv-clear]");
+        if (!btn) return;
+        const lv = btn.getAttribute("data-lv-clear");
+        const key = K.levelPrizeKey(lv);
+        await K.setImage(key, "");
+        const box = lvSlots.querySelector("[data-lv-box=\"" + lv + "\"]");
+        K.previewPrize(box, key, "");
+      });
+    }
     document.querySelectorAll("#export-seg input").forEach((el) => {
       el.addEventListener("change", () => K.saveSettings({ autoExport: el.value === "on" }));
     });
-    bindPrize("shop-prize-text", "shop-prize-file", "shop-prize-clear", "shop-prize-box", "shopPrizeText", "prize-shop", "shop");
-    bindPrize("rescue-prize-text", "rescue-prize-file", "rescue-prize-clear", "rescue-prize-box", "rescuePrizeText", "prize-rescue", "rescue");
+    bindPrize("shop-prize-text", "shop-prize-file", "shop-prize-clear", "shop-prize-box", "shopPrizeText", "prize-shop");
+    bindPrize("rescue-prize-text", "rescue-prize-file", "rescue-prize-clear", "rescue-prize-box", "rescuePrizeText", "prize-rescue");
     document.querySelectorAll(".js-open-adult").forEach((el) => {
       el.addEventListener("click", () => show("adult"));
     });
