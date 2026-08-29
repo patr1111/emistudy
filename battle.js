@@ -45,20 +45,14 @@
   function fillParentLevels() {
     const box = document.getElementById("parent-level-seg");
     if (!box) return;
-    const selected = K.getSettings().battleParentLevels || [];
+    const selected = (K.getSettings().battleParentLevels || [])[0] || "pre2";
     box.innerHTML = "";
     K.LEVELS.forEach((it) => {
       const lab = document.createElement("label");
-      lab.innerHTML = '<input type="checkbox" value="' + it.id + '"> ' + it.name;
-      lab.querySelector("input").checked = selected.indexOf(it.id) >= 0;
+      lab.innerHTML = '<input type="radio" name="parent-lv" value="' + it.id + '"> ' + it.name;
+      lab.querySelector("input").checked = it.id === selected;
       lab.querySelector("input").addEventListener("change", () => {
-        const levels = Array.from(box.querySelectorAll("input:checked")).map((el) => el.value);
-        if (!levels.length) {
-          lab.querySelector("input").checked = true;
-          K.toast("級は1つ以上選んでください");
-          return;
-        }
-        K.saveSettings({ battleParentLevels: levels });
+        K.saveSettings({ battleParentLevels: [it.id] });
         renderTitle();
       });
       box.appendChild(lab);

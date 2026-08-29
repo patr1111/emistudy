@@ -85,10 +85,17 @@
     s.levels = s.levels.filter((id) => LEVELS.some((x) => x.id === id));
     if (!s.levels.length) s.levels = ["pre2"];
     if (!Array.isArray(s.battleParentLevels) || !s.battleParentLevels.length) {
-      s.battleParentLevels = s.levels.slice();
+      s.battleParentLevels = [s.levels[0]];
     }
     s.battleParentLevels = s.battleParentLevels.filter((id) => LEVELS.some((x) => x.id === id));
-    if (!s.battleParentLevels.length) s.battleParentLevels = s.levels.slice();
+    if (!s.battleParentLevels.length) s.battleParentLevels = [s.levels[0]];
+    {
+      let pick = s.battleParentLevels[0];
+      LEVELS.forEach((x) => {
+        if (s.battleParentLevels.indexOf(x.id) >= 0) pick = x.id;
+      });
+      s.battleParentLevels = [pick];
+    }
     if (!s.taste) {
       s.taste = s.theme === "sky" ? "cool" : "kawaii";
     }
