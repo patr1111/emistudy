@@ -8,7 +8,6 @@
   const SHOP_PLACES_PER_LEVEL = 3;
   const RESCUE_STOPS_PER_LEVEL = 5;
   const RESCUE_ROUNDS_PER_STOP = 3;
-  const RACE_GOAL = 5;
   const LEVELS = [
     { id: "g4", name: "4級ぐらい" },
     { id: "g3", name: "3級ぐらい" },
@@ -907,24 +906,30 @@
   function battleStatus() {
     const left = unclearedWords().length;
     const parentN = parentWordPool().length;
-    return { left: left, parentN: parentN, canPlay: left >= ROUND && parentN >= 6 };
+    return { left: left, parentN: parentN, canPlay: left >= ROUND && parentN >= ROUND };
   }
   function pickBattleItems() {
-    const kidPool = unclearedWords().slice(0, ROUND);
-    if (kidPool.length < ROUND) return [];
-    const kidItems = shuffleCopy(kidPool).slice(0, 5);
+    const kidItems = unclearedWords().slice(0, ROUND);
+    if (kidItems.length < ROUND) return [];
     const used = new Set(kidItems.map((w) => w.en));
     let parentSrc = parentWordPool().filter((w) => !used.has(w.en));
-    if (parentSrc.length < 5) parentSrc = parentWordPool().slice();
-    if (parentSrc.length < 5) {
+    if (parentSrc.length < ROUND) parentSrc = parentWordPool().slice();
+    if (parentSrc.length < ROUND) {
       wordQueue().forEach((w) => {
         if (!used.has(w.en) && parentSrc.indexOf(w) < 0) parentSrc.push(w);
       });
     }
-    const parentItems = shuffleCopy(parentSrc).slice(0, 5);
-    if (kidItems.length < 5 || parentItems.length < 5) return [];
+    const parentItems = shuffleCopy(parentSrc).slice(0, ROUND);
+    if (kidItems.length < ROUND || parentItems.length < ROUND) return [];
     const items = [];
-    for (let i = 0; i < 5; i++) items.push(kidItems[i], parentItems[i]);
+    const sizes = [3, 3, 4];
+    let ki = 0, pi = 0;
+    sizes.forEach((n) => {
+      for (let i = 0; i < n; i++) {
+        items.push(kidItems[ki++]);
+        items.push(parentItems[pi++]);
+      }
+    });
     return items;
   }
   function downloadMissExcel(rows) {
@@ -1139,7 +1144,7 @@
   migrateImagesOnce().catch(() => {});
 
   global.Kirameki = {
-    STORE_KEY, ROUND, PLACE_SIZE, LEVEL_WORDS, SHOP_PLACES_PER_LEVEL, RESCUE_STOPS_PER_LEVEL, RESCUE_ROUNDS_PER_STOP, RACE_GOAL,
+    STORE_KEY, ROUND, PLACE_SIZE, LEVEL_WORDS, SHOP_PLACES_PER_LEVEL, RESCUE_STOPS_PER_LEVEL, RESCUE_ROUNDS_PER_STOP,
     CHAR_IDS, CHAR_BY_TASTE, LEVELS, KANJI_MODES, TASTES, DEFAULT_SETTINGS, DEFAULT_NAMES, GAMES,
     today, esc, toast, applyTaste,
     getSettings, saveSettings, getProgress, saveProgress, getGame, saveGame, getShop, saveShop, getRescue, saveRescue, resetAll,

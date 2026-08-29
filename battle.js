@@ -2,6 +2,8 @@
   const K = window.Kirameki;
   const C = window.KiramekiChars;
   const CHOICES = 6;
+  const ROUND_START = [0, 6, 12];
+  const ROUND_LEN = [6, 6, 8];
   let WORDS = [];
   let quiz = null;
 
@@ -25,22 +27,84 @@
     if (kidTurn) return await C.faceHtml(player(), mood || "normal", size);
     return parentFaceHtml(mood, size);
   }
-  function counts() {
-    const log = (quiz && quiz.log) || [];
-    const kid = log.filter((x) => isKid(x.i));
-    const par = log.filter((x) => !isKid(x.i));
-    return {
-      kidOk: kid.filter((x) => x.ok).length,
-      kidN: kid.length,
-      parOk: par.filter((x) => x.ok).length,
-      parN: par.length
-    };
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  function scoreHtml(c) {
-    const goal = K.RACE_GOAL || 5;
-    return "<div class='vs-col'><span class='vs-who'>こども</span><span class='vs-num'>" + c.kidOk + "／" + goal + "</span></div>"
-      + "<div class='vs-vs'>VS</div>"
-      + "<div class='vs-col'><span class='vs-who'>パパ・ママ</span><span class='vs-num'>" + c.parOk + "／" + goal + "</span></div>";
+  function roundOf(i) {
+    if (i < 6) return 0;
+    if (i < 12) return 1;
+    return 2;
+  }
+  function roundProgress(i) {
+    const r = roundOf(i);
+    const n = ROUND_LEN[r] / 2;
+    const cur = Math.floor((i - ROUND_START[r]) / 2) + 1;
+    return { cur: cur, n: n, r: r };
+  }
+  function fillProgress(i) {
+    const el = document.getElementById("round-progress");
+    if (!el) return;
+    const p = roundProgress(i);
+    el.textContent = p.cur + "/" + p.n;
+  }
+  function waitOverlay(el, ms) {
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        el.removeEventListener("click", onClick);
+        resolve();
+      };
+      const onClick = () => finish();
+      el.addEventListener("click", onClick);
+      setTimeout(finish, ms);
+    });
+  }
+  function roundMarks() {
+    const log = (quiz && quiz.log) || [];
+    return [0, 1, 2].map((r) => {
+      const start = ROUND_START[r];
+      const len = ROUND_LEN[r];
+      const slice = log.filter((x) => x.i >= start && x.i < start + len);
+      if (slice.length < len) return { kid: "", par: "" };
+      const kidOk = slice.filter((x) => isKid(x.i) && x.ok).length;
+      const parOk = slice.filter((x) => !isKid(x.i) && x.ok).length;
+      if (kidOk > parOk) return { kid: "○", par: "×" };
+      if (parOk > kidOk) return { kid: "×", par: "○" };
+      return { kid: "△", par: "△" };
+    });
+  }
+  function tallyRounds(marks) {
+    let kid = 0, par = 0;
+    marks.forEach((m) => {
+      if (m.kid === "○") kid += 1;
+      if (m.par === "○") par += 1;
+    });
+    return { kid: kid, par: par };
+  }
+  function fillBoard(root, currentRound) {
+    if (!root) return;
+    const marks = roundMarks();
+    [0, 1, 2].forEach((r) => {
+      const kid = root.querySelector('[data-who="kid"][data-r="' + r + '"]');
+      const par = root.querySelector('[data-who="par"][data-r="' + r + '"]');
+      if (kid) kid.textContent = marks[r].kid;
+      if (par) par.textContent = marks[r].par;
+      [kid, par].forEach((el) => {
+        if (!el) return;
+        el.classList.toggle("now", currentRound === r);
+      });
+    });
+    root.querySelectorAll("thead th[data-r]").forEach((th) => {
+      th.classList.toggle("now", String(currentRound) === th.getAttribute("data-r"));
+    });
+  }
+  async function fillBoardFaces() {
+    const kidHtml = await C.faceHtml(player(), "happy", 48);
+    const parHtml = parentFaceHtml("happy", 48);
+    document.querySelectorAll("[data-vs-kid]").forEach((el) => { el.innerHTML = kidHtml; });
+    document.querySelectorAll("[data-vs-par]").forEach((el) => { el.innerHTML = parHtml; });
   }
   function fillParentLevels() {
     const box = document.getElementById("parent-level-seg");
@@ -72,46 +136,11 @@
     } else {
       lock.hidden = false;
       start.hidden = true;
-      const why = st.parentN < 6
+      const why = st.parentN < K.ROUND
         ? "パパ・ママの級の単語が足りません。級を変えてください。"
         : "まだ出していない単語が " + st.left + "語です。10語ないと遊べません。";
       document.getElementById("lock-count").textContent = why;
     }
-  }
-  function renderGauge() {
-    const g = document.getElementById("gauge");
-    g.innerHTML = "";
-    for (let i = 0; i < quiz.items.length; i++) {
-      const d = document.createElement("div");
-      if (i < quiz.log.length) {
-        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad") + (isKid(i) ? " kid" : " par");
-        d.textContent = quiz.log[i].ok ? (isKid(i) ? "★" : "●") : "💧";
-      } else {
-        d.className = "gdot" + (i === quiz.i ? " on" : "") + (isKid(i) ? " kid" : " par");
-        d.textContent = i === quiz.i ? (isKid(i) ? "★" : "●") : "";
-      }
-      g.appendChild(d);
-    }
-  }
-  async function setRaceFaces() {
-    const kid = document.getElementById("race-kid");
-    const par = document.getElementById("race-par");
-    if (kid) kid.innerHTML = await C.faceHtml(player(), "happy", 48);
-    if (par) par.innerHTML = parentFaceHtml("happy", 48);
-  }
-  function setRacePos() {
-    const c = counts();
-    const goal = K.RACE_GOAL || 5;
-    const pct = (n) => "calc(" + (Math.min(n, goal) / goal) + " * (100% - 52px))";
-    const kid = document.getElementById("race-kid");
-    const par = document.getElementById("race-par");
-    if (kid) kid.style.left = pct(c.kidOk);
-    if (par) par.style.left = pct(c.parOk);
-  }
-  function raceOver() {
-    const c = counts();
-    const goal = K.RACE_GOAL || 5;
-    return c.kidOk >= goal || c.parOk >= goal || (quiz && quiz.i >= quiz.items.length);
   }
   async function setTurnFace(mood) {
     const kidTurn = isKid(quiz.i);
@@ -133,12 +162,11 @@
     document.documentElement.classList.toggle("turn-par", !kidTurn);
     document.getElementById("quiz").classList.toggle("turn-kid", kidTurn);
     document.getElementById("quiz").classList.toggle("turn-par", !kidTurn);
-    document.getElementById("vs-score").innerHTML = scoreHtml(counts());
-    setRacePos();
+    fillBoard(document.getElementById("vs-board"), roundOf(quiz.i));
+    fillProgress(quiz.i);
   }
   function renderQuestion() {
     const w = quiz.items[quiz.i];
-    renderGauge();
     renderTurn();
     setTurnFace("normal");
     document.getElementById("english").textContent = w.en;
@@ -170,20 +198,72 @@
     el.className = "react on " + (ok ? "ok" : "ng");
     await K.waitReact(K.flashTimes(ok).wait);
   }
-  function openScoreDlg() {
-    document.getElementById("score-dlg-body").innerHTML = scoreHtml(counts());
-    document.getElementById("score-dlg").classList.add("on");
+  async function showRoundIntro(round) {
+    const el = document.getElementById("round-intro");
+    const lab = document.getElementById("round-intro-lab");
+    const count = document.getElementById("round-intro-count");
+    if (!el) return;
+    const token = quiz && quiz.token;
+    const react = document.getElementById("react");
+    if (react) react.className = "react";
+    lab.textContent = "Round " + (round + 1);
+    count.textContent = "3";
+    el.classList.add("on");
+    for (let n = 3; n >= 1; n--) {
+      if (!quiz || quiz.token !== token) {
+        el.classList.remove("on");
+        return;
+      }
+      count.textContent = String(n);
+      await sleep(1000);
+    }
+    el.classList.remove("on");
   }
-  function afterQuestion() {
+  async function showTurnIntro(i) {
+    const el = document.getElementById("turn-intro");
+    const face = document.getElementById("turn-intro-face");
+    const lab = document.getElementById("turn-intro-lab");
+    if (!el) return;
+    const token = quiz && quiz.token;
+    const react = document.getElementById("react");
+    if (react) react.className = "react";
+    const intro = document.getElementById("round-intro");
+    if (intro) intro.classList.remove("on");
+    const kidTurn = isKid(i);
+    if (face) face.innerHTML = await turnFaceHtml(kidTurn, "normal", 140);
+    lab.textContent = kidTurn ? "こどものばん" : "パパ・ママのばん";
+    lab.className = "turn-intro-lab" + (kidTurn ? " kid" : " par");
+    fillBoard(document.getElementById("vs-board"), roundOf(i));
+    fillProgress(i);
+    document.getElementById("turn-banner").textContent = kidTurn
+      ? "いまは こどものばん"
+      : "いまは パパ・ママのばん";
+    document.getElementById("turn-banner").className = "turn-banner" + (kidTurn ? " kid" : " par");
+    document.documentElement.classList.toggle("turn-kid", kidTurn);
+    document.documentElement.classList.toggle("turn-par", !kidTurn);
+    const qel = document.getElementById("quiz");
+    qel.classList.toggle("turn-kid", kidTurn);
+    qel.classList.toggle("turn-par", !kidTurn);
+    await setTurnFace("normal");
+    el.classList.add("on");
+    await waitOverlay(el, 1800);
+    el.classList.remove("on");
+    if (!quiz || quiz.token !== token) return;
+  }
+  async function afterQuestion() {
     if (!quiz) return;
-    if (raceOver()) {
+    if (quiz.i >= quiz.items.length) {
       finishBattle();
       return;
     }
-    if (quiz.i === 4 || quiz.i === 8) {
-      openScoreDlg();
-      return;
+    if (quiz.i === 6 || quiz.i === 12) {
+      fillBoard(document.getElementById("vs-board"), roundOf(quiz.i));
+      fillProgress(quiz.i);
+      await showRoundIntro(roundOf(quiz.i));
+      if (!quiz) return;
     }
+    await showTurnIntro(quiz.i);
+    if (!quiz) return;
     renderQuestion();
   }
   async function onChoose(btn, opt, w) {
@@ -196,7 +276,6 @@
     });
     if (!ok) btn.classList.add("ng");
     quiz.log.push({ i: turnI, en: w.en, w: w, ok: ok });
-    renderGauge();
     renderTurn();
     setTurnFace(ok ? "happy" : "sad");
     await flash(ok, w);
@@ -211,22 +290,18 @@
   }
   async function finishBattle() {
     saveKidProgress();
-    const c = counts();
-    const goal = K.RACE_GOAL || 5;
+    const marks = roundMarks();
+    const t = tallyRounds(marks);
     let winner = "draw";
     let line = "ひきわけ！";
-    if (c.kidOk >= goal && c.parOk < goal) { winner = "kid"; line = "こどものかち！"; }
-    else if (c.parOk >= goal && c.kidOk < goal) { winner = "par"; line = "パパ・ママのかち！"; }
-    else if (c.kidOk > c.parOk) { winner = "kid"; line = "こどものかち！"; }
-    else if (c.parOk > c.kidOk) { winner = "par"; line = "パパ・ママのかち！"; }
+    if (t.kid > t.par) { winner = "kid"; line = "こどものかち！"; }
+    else if (t.par > t.kid) { winner = "par"; line = "パパ・ママのかち！"; }
     document.getElementById("winner-line").textContent = line;
     document.getElementById("winner-line").className = "english winner-" + winner;
     document.getElementById("result-msg").textContent =
-      "こども " + c.kidOk + "マス　パパ・ママ " + c.parOk + "マス";
-    document.getElementById("vs-final").innerHTML =
-      "<div class='vs-col'><span class='vs-who'>こども</span><span class='vs-num'>" + c.kidOk + "マス</span></div>"
-      + "<div class='vs-vs'>VS</div>"
-      + "<div class='vs-col'><span class='vs-who'>パパ・ママ</span><span class='vs-num'>" + c.parOk + "マス</span></div>";
+      "○の数  " + t.kid + " 対 " + t.par;
+    fillBoard(document.getElementById("vs-board-final"), 3);
+    await fillBoardFaces();
     document.getElementById("result-faces").innerHTML =
       "<div class='buddy-wrap'>" + await C.faceHtml(player(), winner === "par" ? "sad" : "happy", 100)
       + "<div class='buddy-name'>" + kidName() + "</div></div>"
@@ -237,9 +312,9 @@
     ).join("");
     show("result");
   }
-  function startBattle() {
+  async function startBattle() {
     const items = K.pickBattleItems();
-    if (items.length < K.ROUND) {
+    if (items.length < 20) {
       K.toast("まだ出していない単語が10語ないよ");
       renderTitle();
       show("title");
@@ -254,13 +329,29 @@
       parentPool: K.parentWordPool()
     };
     show("quiz");
-    setRaceFaces().then(setRacePos);
+    document.getElementById("english").textContent = "";
+    document.getElementById("choices").innerHTML = "";
+    const ex = document.getElementById("example");
+    if (ex) ex.innerHTML = "";
+    document.getElementById("turn-banner").textContent = "";
+    document.getElementById("buddy-wrap").innerHTML = "";
+    await fillBoardFaces();
+    fillBoard(document.getElementById("vs-board"), 0);
+    fillProgress(0);
+    await showRoundIntro(0);
+    if (!quiz) return;
+    await showTurnIntro(0);
+    if (!quiz) return;
     renderQuestion();
   }
   function quitQuiz() {
     quiz = null;
     K.stopSpeak();
-    document.getElementById("score-dlg").classList.remove("on");
+    const intro = document.getElementById("round-intro");
+    if (intro) intro.classList.remove("on");
+    const turn = document.getElementById("turn-intro");
+    if (turn) turn.classList.remove("on");
+    document.getElementById("react").className = "react";
     renderTitle();
     show("title");
   }
@@ -269,12 +360,6 @@
     renderTitle();
     document.getElementById("go-start").addEventListener("click", startBattle);
     document.getElementById("quiz-quit").addEventListener("click", quitQuiz);
-    document.getElementById("score-go").addEventListener("click", () => {
-      document.getElementById("score-dlg").classList.remove("on");
-      if (!quiz) return;
-      if (raceOver()) finishBattle();
-      else renderQuestion();
-    });
     document.getElementById("again").addEventListener("click", startBattle);
     document.getElementById("result-home").addEventListener("click", () => {
       renderTitle();
