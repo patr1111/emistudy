@@ -89,7 +89,7 @@
     if (endingRow) endingRow.hidden = !cur.allDone;
     updateOpenHint();
     layoutPath();
-    K.renderMapPrize(document.getElementById("map-prize"));
+    K.renderMapPrize(document.getElementById("map-prize"), "rescue");
   }
   function layoutPath() {
     const wrap = document.querySelector(".path-map");

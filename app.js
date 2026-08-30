@@ -516,7 +516,29 @@
     return allWords().filter((w) => set.has(w.lv) && (st.abstract || !w.ab));
   }
   function filteredWords() { return wordsForLevels(getSettings().levels); }
-  function parentWordPool() { return wordsForLevels(getSettings().battleParentLevels); }
+  function parentWordPool() {
+    const selected = (getSettings().battleParentLevels || [])[0];
+    const order = LEVELS.map((x) => x.id);
+    const start = Math.max(0, order.indexOf(selected));
+    const pool = [];
+    const seen = new Set();
+    for (let i = start; i < order.length; i++) {
+      allWords().forEach((w) => {
+        if (w.lv === order[i] && w.ab && !seen.has(w.en)) {
+          seen.add(w.en);
+          pool.push(w);
+        }
+      });
+      if (pool.length >= ROUND) break;
+    }
+    return pool;
+  }
+  function parentChoicePool() {
+    const abs = parentWordPool();
+    if (abs.length >= 24) return abs;
+    const set = new Set(getSettings().battleParentLevels || []);
+    return allWords().filter((w) => set.has(w.lv));
+  }
   function wordQueue() {
     const all = filteredWords();
     return all.slice(0, Math.floor(all.length / ROUND) * ROUND);
@@ -678,9 +700,18 @@
     };
   }
   function levelPrizeKey(lv1) { return "prize-level-" + lv1; }
+  function storedLevelPrizeText(lv1) {
+    return ((getSettings().levelPrizeTexts || {})[String(lv1)] || "").trim();
+  }
   function levelPrizeText(lv1) {
-    const t = ((getSettings().levelPrizeTexts || {})[String(lv1)] || "").trim();
-    return t || "このレベルをクリアしたら、このご褒美がもらえるよ。";
+    return storedLevelPrizeText(lv1) || "このレベルをクリアしたら、このご褒美がもらえるよ。";
+  }
+  function prizeWorthShowing(src, text, defaultText) {
+    if (src) return true;
+    const t = (text || "").trim();
+    if (!t) return false;
+    if (defaultText && t === defaultText) return false;
+    return true;
   }
   function fillPrizeImg(img, fallback, src) {
     const showFallback = () => {
@@ -710,23 +741,61 @@
     getImage(key).then((src) => fillPrizeImg(img, fallback, src)).catch(() => fillPrizeImg(img, fallback, ""));
     if (msg) msg.innerHTML = esc(text || "").replace(/\n/g, "<br>");
   }
-  async function renderMapPrize(box) {
+  function fillMapPrizeCard(card, labText, src, text) {
+    if (!card) return;
+    const lab = card.querySelector("[data-map-prize-lab]");
+    const msg = card.querySelector("[data-map-prize-msg]");
+    const img = card.querySelector("[data-map-prize-img]");
+    const fallback = card.querySelector("[data-map-prize-fallback]");
+    if (lab) lab.textContent = labText;
+    if (msg) {
+      msg.textContent = text || "";
+      msg.hidden = !(text || "").trim();
+    }
+    if (src) {
+      fillPrizeImg(img, fallback, src);
+    } else {
+      if (img) {
+        img.removeAttribute("src");
+        img.style.display = "none";
+      }
+      if (fallback) fallback.style.display = "none";
+    }
+  }
+  async function renderMapPrize(box, game) {
     if (!box) return;
     const flags = prizeFlags();
-    if (!flags.level || allWordsCleared()) {
-      box.hidden = true;
-      return;
-    }
-    box.hidden = false;
     const lv = levelDisplay();
-    const lab = box.querySelector("[data-map-prize-lab]");
-    const msg = box.querySelector("[data-map-prize-msg]");
-    const img = box.querySelector("[data-map-prize-img]");
-    const fallback = box.querySelector("[data-map-prize-fallback]");
-    if (lab) lab.textContent = "Lv" + lv + "をクリアしたら";
-    if (msg) msg.textContent = levelPrizeText(lv);
-    const src = await getImage(levelPrizeKey(lv));
-    fillPrizeImg(img, fallback, src);
+    const allDone = allWordsCleared();
+    const levelCard = box.querySelector("[data-map-level]");
+    const allCard = box.querySelector("[data-map-all]");
+    const st = getSettings();
+    const allKey = game === "rescue" ? "prize-rescue" : "prize-shop";
+    const allText = ((game === "rescue" ? st.rescuePrizeText : st.shopPrizeText) || "").trim();
+    const allDefault = game === "rescue" ? DEFAULT_SETTINGS.rescuePrizeText : DEFAULT_SETTINGS.shopPrizeText;
+
+    let showLevel = false;
+    if (flags.level && !allDone && levelCard) {
+      const src = await getImage(levelPrizeKey(lv));
+      const custom = storedLevelPrizeText(lv);
+      showLevel = prizeWorthShowing(src, custom, "");
+      if (showLevel) {
+        fillMapPrizeCard(levelCard, "Lv" + lv + "をクリアしたら", src, custom || levelPrizeText(lv));
+      }
+    }
+    if (levelCard) levelCard.hidden = !showLevel;
+
+    let showAll = false;
+    if (flags.all && allCard) {
+      const src = await getImage(allKey);
+      showAll = prizeWorthShowing(src, allText, allDefault);
+      if (showAll) {
+        fillMapPrizeCard(allCard, allDone ? "全部クリアのご褒美" : "全部終わったら", src, allText);
+      }
+    }
+    if (allCard) allCard.hidden = !showAll;
+
+    box.hidden = !showLevel && !showAll;
   }
   function marksRowHtml(items) {
     let html = "<div class=\"step-marks\">";
@@ -914,11 +983,6 @@
     const used = new Set(kidItems.map((w) => w.en));
     let parentSrc = parentWordPool().filter((w) => !used.has(w.en));
     if (parentSrc.length < ROUND) parentSrc = parentWordPool().slice();
-    if (parentSrc.length < ROUND) {
-      wordQueue().forEach((w) => {
-        if (!used.has(w.en) && parentSrc.indexOf(w) < 0) parentSrc.push(w);
-      });
-    }
     const parentItems = shuffleCopy(parentSrc).slice(0, ROUND);
     if (kidItems.length < ROUND || parentItems.length < ROUND) return [];
     const items = [];
@@ -1154,7 +1218,7 @@
     unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
     clearedInQueue, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
     shopPlaceRange, rescueStopCount, rescueStopInfo, rescueCursor, unClearRescueFromStop,
-    prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize,
+    prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize, parentChoicePool,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, downloadMissExcel,

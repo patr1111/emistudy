@@ -37,11 +37,19 @@
     </nav>
     <h1 class="kid-h">おかいものマップ　<span id="map-lv">Lv1</span></h1>
     <p class="kid-hint">いまのレベルの店だけ見えるよ。3か所いったらレベルアップ！</p>
-    <div class="map-prize" id="map-prize" hidden>
-      <p class="map-prize-lab" data-map-prize-lab>このレベルをクリアしたら</p>
-      <div class="prize-fallback" data-map-prize-fallback>🎁</div>
-      <img data-map-prize-img alt="レベルのごほうび" style="display:none" />
-      <p data-map-prize-msg></p>
+    <div class="map-prizes" id="map-prize" hidden>
+      <div class="map-prize" data-map-level hidden>
+        <p class="map-prize-lab" data-map-prize-lab>このレベルをクリアしたら</p>
+        <div class="prize-fallback" data-map-prize-fallback>🎁</div>
+        <img data-map-prize-img alt="レベルのごほうび" style="display:none" />
+        <p data-map-prize-msg></p>
+      </div>
+      <div class="map-prize" data-map-all hidden>
+        <p class="map-prize-lab" data-map-prize-lab>全部終わったら</p>
+        <div class="prize-fallback" data-map-prize-fallback>🎁</div>
+        <img data-map-prize-img alt="全部クリアのごほうび" style="display:none" />
+        <p data-map-prize-msg></p>
+      </div>
     </div>
     <div class="map-grid" id="map-grid"></div>
   </section>

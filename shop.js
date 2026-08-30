@@ -72,7 +72,7 @@
       else if (fullyDone) el.addEventListener("click", () => redoPlace(p));
       grid.appendChild(el);
     }
-    K.renderMapPrize(document.getElementById("map-prize"));
+    K.renderMapPrize(document.getElementById("map-prize"), "shop");
   }
   function closeRedoDlg() {
     const dlg = document.getElementById("redo-dlg");
