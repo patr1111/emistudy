@@ -137,7 +137,7 @@
       lock.hidden = false;
       start.hidden = true;
       const why = st.parentN < K.ROUND
-        ? "パパ・ママの級で、社会・学術の語が10語ありません。級を変えてください。"
+        ? "パパ・ママの級の単語が足りません。級を変えてください。"
         : "まだ出していない単語が " + st.left + "語です。10語ないと遊べません。";
       document.getElementById("lock-count").textContent = why;
     }

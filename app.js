@@ -518,26 +518,17 @@
   function filteredWords() { return wordsForLevels(getSettings().levels); }
   function parentWordPool() {
     const selected = (getSettings().battleParentLevels || [])[0];
-    const order = LEVELS.map((x) => x.id);
-    const start = Math.max(0, order.indexOf(selected));
-    const pool = [];
-    const seen = new Set();
-    for (let i = start; i < order.length; i++) {
-      allWords().forEach((w) => {
-        if (w.lv === order[i] && w.ab && !seen.has(w.en)) {
-          seen.add(w.en);
-          pool.push(w);
-        }
-      });
-      if (pool.length >= ROUND) break;
-    }
-    return pool;
+    const inLevel = allWords().filter((w) => w.lv === selected);
+    const abs = shuffleCopy(inLevel.filter((w) => w.ab));
+    if (abs.length >= ROUND) return abs;
+    return abs.concat(shuffleCopy(inLevel.filter((w) => !w.ab)));
   }
   function parentChoicePool() {
-    const abs = parentWordPool();
+    const selected = (getSettings().battleParentLevels || [])[0];
+    const inLevel = allWords().filter((w) => w.lv === selected);
+    const abs = inLevel.filter((w) => w.ab);
     if (abs.length >= 24) return abs;
-    const set = new Set(getSettings().battleParentLevels || []);
-    return allWords().filter((w) => set.has(w.lv));
+    return inLevel;
   }
   function wordQueue() {
     const all = filteredWords();
@@ -983,7 +974,7 @@
     const used = new Set(kidItems.map((w) => w.en));
     let parentSrc = parentWordPool().filter((w) => !used.has(w.en));
     if (parentSrc.length < ROUND) parentSrc = parentWordPool().slice();
-    const parentItems = shuffleCopy(parentSrc).slice(0, ROUND);
+    const parentItems = parentSrc.slice(0, ROUND);
     if (kidItems.length < ROUND || parentItems.length < ROUND) return [];
     const items = [];
     const sizes = [3, 3, 4];
