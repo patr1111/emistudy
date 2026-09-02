@@ -230,7 +230,7 @@
     const cleared = (K.getProgress().clearedEns || []).length;
     document.getElementById("level-count").textContent =
       "出題は " + n + "語です。" + (st.abstract ? "抽象語を含みます。" : "抽象語は外しています。") +
-      " クリア済み " + (n - left) + "語は、どのゲームでも出ません。";
+      " 答えた " + (n - left) + "語は、どのゲームの本編でも出ません。";
     document.getElementById("cleared-count").textContent =
       "いまクリア済みは " + cleared + "語です。";
     document.getElementById("shop-prize-text").value = st.shopPrizeText;

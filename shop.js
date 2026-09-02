@@ -136,13 +136,16 @@
       return;
     }
     roundToken += 1;
-    quiz = { place, items, i: 0, log: [], review: !!customWords, buddy: buddy || C.shopChars()[0], token: roundToken };
+    quiz = {
+      place, items, i: 0, log: [], review: !!customWords, buddy: buddy || C.shopChars()[0], token: roundToken,
+      prefixBefore: K.queuePrefix()
+    };
     show("quiz");
     renderQuestion();
   }
   function quitQuiz() {
     if (!quiz) return;
-    if (!confirm("このステージをやめる？答えた分のまちがいは残るよ。クリアにはならないよ。")) return;
+    if (!confirm("このステージをやめる？答えた分は本編ではもう出ないよ。まちがいはリストに残るよ。")) return;
     const review = quiz.review;
     roundToken += 1;
     quiz = null;
@@ -243,7 +246,7 @@
     if (!quiz) return;
     const okN = quiz.log.filter((x) => x.ok).length;
     if (!quiz.review) {
-      const before = K.queuePrefix();
+      const before = quiz.prefixBefore != null ? quiz.prefixBefore : K.queuePrefix();
       K.markCleared(quiz.items);
       extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
       persist();

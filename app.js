@@ -120,7 +120,31 @@
     if (!s.shopBuddyIds.length) s.shopBuddyIds = ids.slice();
     return s;
   }
-  function blankProgress() { return { answers: {}, clearedEns: [] }; }
+  function blankProgress() { return { answers: {}, clearedEns: [], clearedFromLog: false }; }
+  function loggedEns(answers) {
+    return Object.keys(answers || {}).filter((en) => ((answers[en] || {}).seen || 0) > 0);
+  }
+  function fillClearedFromAnswers(p) {
+    if (!p) return;
+    p.clearedEns = p.clearedEns || [];
+    loggedEns(p.answers).forEach((en) => {
+      if (p.clearedEns.indexOf(en) < 0) p.clearedEns.push(en);
+    });
+  }
+  function adoptLoggedWords(p) {
+    if (!p || p.clearedFromLog) return false;
+    fillClearedFromAnswers(p);
+    p.clearedFromLog = true;
+    return true;
+  }
+  function normalizeProgress(raw) {
+    const src = raw && typeof raw === "object" ? raw : {};
+    return {
+      answers: Object.assign({}, src.answers || {}),
+      clearedEns: Array.isArray(src.clearedEns) ? src.clearedEns.slice() : [],
+      clearedFromLog: !!src.clearedFromLog
+    };
+  }
   function blankShop() { return { ribbons: 0, buddyByPlace: {} }; }
   function blankRescue() { return { stage: 0, tools: [], stageEns: [] }; }
   const GAMES = [
@@ -170,14 +194,12 @@
       const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
       if (!s || typeof s !== "object") return blankAll();
       const progress = s.progress && typeof s.progress === "object"
-        ? {
-          answers: Object.assign({}, s.progress.answers || {}),
-          clearedEns: Array.isArray(s.progress.clearedEns) ? s.progress.clearedEns.slice() : []
-        }
-        : {
+        ? normalizeProgress(s.progress)
+        : normalizeProgress({
           answers: mergeAnswers(collectOldAnswers(s.shop), collectOldAnswers(s.rescue)),
           clearedEns: []
-        };
+        });
+      const adopted = adoptLoggedWords(progress);
       const shop = s.shop && s.shop.buddyByPlace ? { ribbons: s.shop.ribbons || 0, buddyByPlace: s.shop.buddyByPlace }
         : blankShop();
       const rescue = s.rescue && typeof s.rescue.stage === "number"
@@ -198,6 +220,7 @@
         if (CORE_KEYS.indexOf(k) >= 0 || GAME_BLANKS[k]) return;
         if (s[k] && typeof s[k] === "object") out[k] = s[k];
       });
+      if (adopted) writeAll(out);
       return out;
     } catch (e) {
       return blankAll();
@@ -938,6 +961,9 @@
     if (ok) { a.right += 1; a.last = "せいかい"; }
     else { a.wrong += 1; a.last = "まちがい"; if (!a.firstWrongAt) a.firstWrongAt = today(); }
     p.answers[en] = a;
+    p.clearedEns = p.clearedEns || [];
+    if (en && p.clearedEns.indexOf(en) < 0) p.clearedEns.push(en);
+    p.clearedFromLog = true;
     saveProgress(p);
   }
   function missEntries() {
@@ -1045,13 +1071,14 @@
     const all = blankAll();
     all.settings = normalizeSettings(data.settings || {});
     if (data.progress) {
-      all.progress = {
-        answers: data.progress.answers || {},
-        clearedEns: Array.isArray(data.progress.clearedEns) ? data.progress.clearedEns : []
-      };
+      all.progress = normalizeProgress(data.progress);
     } else {
-      all.progress.answers = mergeAnswers(collectOldAnswers(data.shop), collectOldAnswers(data.rescue), (data.state && data.state.answers) || {});
+      all.progress = normalizeProgress({
+        answers: mergeAnswers(collectOldAnswers(data.shop), collectOldAnswers(data.rescue), (data.state && data.state.answers) || {})
+      });
     }
+    fillClearedFromAnswers(all.progress);
+    all.progress.clearedFromLog = true;
     if (data.shop && data.shop.buddyByPlace) all.shop = { ribbons: data.shop.ribbons || 0, buddyByPlace: data.shop.buddyByPlace };
     if (data.rescue && typeof data.rescue.stage === "number") {
       all.rescue = {

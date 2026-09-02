@@ -247,7 +247,7 @@
       goMap();
       return;
     }
-    if (!confirm("このばしょをやめる？答えた分のまちがいは残るよ。クリアにはならないよ。")) return;
+    if (!confirm("このばしょをやめる？答えた分は本編ではもう出ないよ。まちがいはリストに残るよ。")) return;
     roundToken += 1;
     if (quiz.review) goMiss();
     else goMap();
@@ -280,7 +280,7 @@
     const resultBanner = document.querySelector("#result .quiz-banner img");
     if (resultBanner) resultBanner.src = review ? "img/illust-rescue.jpg" : ("img/" + place.scene + ".jpg");
     if (!review) {
-      const before = K.queuePrefix();
+      const before = quiz.prefixBefore != null ? quiz.prefixBefore : K.queuePrefix();
       K.markCleared(quiz.items);
       let msg = okN + "もん できたよ。";
       if (okN >= TOOL_NEED) {
@@ -336,7 +336,7 @@
     }
     document.getElementById("stageTitle").textContent = placeAt(cur.stop).name;
     roundToken += 1;
-    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.stop, level: cur.level };
+    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.stop, level: cur.level, prefixBefore: K.queuePrefix() };
     await renderFaces("play-faces");
     show("play");
     renderQuestion();
