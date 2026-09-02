@@ -135,7 +135,7 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
   box-shadow: 0 5px 0 var(--shadow); border: 3px solid var(--choice-border); cursor: pointer;
 }
 .place { min-height: 108px; }
-.place.done { opacity: 1; }
+.place.done { opacity: 1; cursor: default; }
 .place.lock { opacity: 0.42; filter: grayscale(0.35); cursor: default; }
 .place { position: relative; }
 .place-no {
@@ -159,7 +159,11 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
 .role-btn.on { border-color: var(--ribbon); background: #fff7f0; color: var(--pink-deep); }
 .role-tags { font-size: 0.72rem; font-weight: 700; margin-top: 4px; opacity: 0.85; }
 .atlas-slot { padding: 8px 4px 10px; }
-.cell .redo-btn { margin-top: 8px; }
+.cell .redo-btn, .place .redo-btn {
+  display: block;
+  width: fit-content;
+  margin: 8px 4px 0 auto;
+}
 .path-map {
   position: relative;
   max-width: 480px;
@@ -230,7 +234,13 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
 }
 .path-info .nm { display: block; font-weight: 800; font-size: 1rem; }
 .path-info .st { display: block; font-size: 0.82rem; margin-top: 2px; }
-.path-info .redo-btn { margin-top: 8px; }
+.path-info .redo-btn {
+  display: block;
+  width: fit-content;
+  margin: 8px 0 0 auto;
+}
+.path-stop.done { cursor: default; }
+.path-stop.done .redo-btn { cursor: pointer; }
 .path-stop.now .path-node {
   border-color: var(--ribbon);
   box-shadow: 0 0 0 4px var(--gold), 0 4px 0 var(--pink-deep);

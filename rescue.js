@@ -76,11 +76,9 @@
         });
         el.querySelector(".path-info").appendChild(redo);
       }
-      if (done && !now) {
-        el.addEventListener("click", () => redoFrom(i));
-      } else if (now) {
+      if (now) {
         el.addEventListener("click", () => startStage());
-      } else {
+      } else if (lock) {
         el.addEventListener("click", () => K.toast("まえのばしょから いこう"));
       }
       grid.appendChild(el);

@@ -69,7 +69,6 @@
         el.appendChild(redo);
       }
       if (p <= open && !fullyDone) el.addEventListener("click", () => openPick(p));
-      else if (fullyDone) el.addEventListener("click", () => redoPlace(p));
       grid.appendChild(el);
     }
     K.renderMapPrize(document.getElementById("map-prize"), "shop");
