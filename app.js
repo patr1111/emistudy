@@ -603,6 +603,14 @@
     const done = new Set(getProgress().clearedEns || []);
     return q.filter((w) => done.has(w.en)).length;
   }
+  function queuePrefix() {
+    const q = wordQueue();
+    const done = new Set(getProgress().clearedEns || []);
+    for (let i = 0; i < q.length; i++) {
+      if (!done.has(q[i].en)) return i;
+    }
+    return q.length;
+  }
   function levelCount() {
     const n = wordQueue().length;
     return Math.max(1, Math.ceil(n / LEVEL_WORDS));
@@ -610,7 +618,7 @@
   function currentLevelIndex() {
     const n = wordQueue().length;
     if (!n) return 0;
-    const c = clearedInQueue();
+    const c = queuePrefix();
     if (c >= n) return Math.max(0, Math.ceil(n / LEVEL_WORDS) - 1);
     return Math.floor(c / LEVEL_WORDS);
   }
@@ -1207,7 +1215,7 @@
     filteredWords, parentWordPool, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
     unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
-    clearedInQueue, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
+    clearedInQueue, queuePrefix, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
     shopPlaceRange, rescueStopCount, rescueStopInfo, rescueCursor, unClearRescueFromStop,
     prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize, parentChoicePool,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,

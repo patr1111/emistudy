@@ -280,7 +280,7 @@
     const resultBanner = document.querySelector("#result .quiz-banner img");
     if (resultBanner) resultBanner.src = review ? "img/illust-rescue.jpg" : ("img/" + place.scene + ".jpg");
     if (!review) {
-      const before = K.clearedInQueue();
+      const before = K.queuePrefix();
       K.markCleared(quiz.items);
       let msg = okN + "もん できたよ。";
       if (okN >= TOOL_NEED) {
@@ -291,7 +291,7 @@
       }
       persist();
       K.maybeAutoExport();
-      const after = K.clearedInQueue();
+      const after = K.queuePrefix();
       const leveled = K.levelJustCleared(before, after);
       const up = document.getElementById("level-up-line");
       if (up) {
@@ -326,7 +326,10 @@
       K.toast("単語がたりないよ");
       return;
     }
-    const items = K.nextRoundItems();
+    const info = K.rescueStopInfo(cur.level, cur.stop);
+    const done = new Set(K.getProgress().clearedEns || []);
+    const fromStop = (info.slice || []).filter((w) => w && !done.has(w.en)).slice(0, TOTAL);
+    const items = fromStop.length ? fromStop : K.nextRoundItems();
     if (!items.length) {
       K.toast("出る単語がもうないよ");
       return;

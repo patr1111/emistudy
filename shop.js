@@ -243,12 +243,12 @@
     if (!quiz) return;
     const okN = quiz.log.filter((x) => x.ok).length;
     if (!quiz.review) {
-      const before = K.clearedInQueue();
+      const before = K.queuePrefix();
       K.markCleared(quiz.items);
       extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
       persist();
       K.maybeAutoExport();
-      const after = K.clearedInQueue();
+      const after = K.queuePrefix();
       const leveled = K.levelJustCleared(before, after);
       const up = document.getElementById("level-up-line");
       if (up) {
