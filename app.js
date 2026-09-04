@@ -887,7 +887,7 @@
     const token = speakToken;
     const u = new SpeechSynthesisUtterance(t);
     u.lang = "en-US";
-    u.rate = 0.5;
+    u.rate = 0.75;
     u.pitch = 1;
     const voice = pickEnVoice();
     if (voice) u.voice = voice;

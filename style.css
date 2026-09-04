@@ -3,8 +3,8 @@
   --pink-deep: #e85a8c;
   --ribbon: #ff7b54;
   --ink: #2d2a32;
-  --ok: #2f9e44;
-  --ng: #d9480f;
+  --ok: #0b9b4a;
+  --ng: #e03131;
   --gold: #ffd56a;
   --card: #ffffff;
   --bg1: #fff4d6;
@@ -126,8 +126,14 @@ html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-d
 }
 .choice .g1, .choice .g2 { display: block; }
 .choice .g2 { margin-top: 4px; font-size: 0.82rem; }
-.choice.ok { background: #c8ffdf; border-color: var(--ok); transform: scale(1.04); }
-.choice.ng { background: #ffd6e0; border-color: var(--ng); }
+.choice.ok {
+  background: #b2f2bb; border-color: var(--ok); border-width: 5px;
+  color: #056b32; transform: scale(1.04); box-shadow: 0 4px 0 #0b7a3a;
+}
+.choice.ng {
+  background: #ffc9c9; border-color: var(--ng); border-width: 5px;
+  color: #a61e1e; box-shadow: 0 4px 0 #c92a2a;
+}
 .choice[disabled] { cursor: default; }
 .map-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .place, .game-card, .char-card {
@@ -442,10 +448,14 @@ img.face.mood-sad { filter: saturate(0.55) brightness(0.88) grayscale(0.15); }
 .react { pointer-events: none; z-index: 40; }
 .react.on { pointer-events: auto; cursor: pointer; }
 .react-box {
-  background: #fff; border-radius: 28px; padding: 20px 16px 22px;
+  background: #fff; border-radius: 28px; padding: 16px 16px 22px;
   max-width: 440px; width: min(92vw, 440px); text-align: center;
   animation: pop 0.45s ease; box-shadow: 0 12px 0 rgba(0,0,0,0.14);
-  pointer-events: auto; cursor: default;
+  pointer-events: auto; cursor: default; border: 6px solid #ddd;
+}
+.react-box::before {
+  display: block; font-size: 1.85rem; font-weight: 800;
+  letter-spacing: 0.06em; margin-bottom: 8px;
 }
 .react-face { display: flex; justify-content: center; gap: 12px; margin-bottom: 10px; min-height: 168px; }
 .react-face img.face {
@@ -457,10 +467,23 @@ img.face.mood-sad { filter: saturate(0.55) brightness(0.88) grayscale(0.15); }
 .react .burst { font-size: 2.4rem; font-weight: 800; text-shadow: none; color: var(--ribbon); }
 .react-en { font-size: 2.1rem; font-weight: 800; margin-top: 6px; color: var(--ink); }
 .react-ja { font-size: 1.25rem; font-weight: 800; margin-top: 2px; line-height: 1.45; white-space: pre-line; color: var(--ink); }
-.react.ok { background: rgba(20, 110, 70, 0.92); }
-.react.ng { background: rgba(40, 18, 28, 0.78); }
-.react.ok .burst { color: #0f6b38; }
-.react.ng .burst, .react.ng .react-en, .react.ng .react-ja { color: #d81b60; }
+.react.ok { background: rgba(8, 150, 70, 0.78); }
+.react.ng { background: rgba(210, 36, 48, 0.78); }
+.react.ok .react-box {
+  background: #e6fff0; border-color: #12b886;
+  box-shadow: 0 12px 0 rgba(8, 120, 58, 0.35);
+}
+.react.ok .react-box::before { content: "○ せいかい"; color: #087f5b; }
+.react.ok .burst { color: #087f5b; }
+.react.ok .react-en, .react.ok .react-ja { color: #0b7a3e; }
+.react.ok .react-face img.face { border-color: #12b886; }
+.react.ng .react-box {
+  background: #fff0f0; border-color: #fa5252;
+  box-shadow: 0 12px 0 rgba(170, 28, 40, 0.35);
+}
+.react.ng .react-box::before { content: "× ざんねん"; color: #c92a2a; }
+.react.ng .burst, .react.ng .react-en, .react.ng .react-ja { color: #c92a2a; }
+.react.ng .react-face img.face { border-color: #fa5252; }
 .board { display: grid; grid-template-columns: repeat(5, minmax(70px, 1fr)); gap: 10px; }
 .cell {
   border: 2px solid var(--choice-border); border-radius: 12px; padding: 10px;
