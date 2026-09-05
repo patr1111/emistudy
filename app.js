@@ -834,14 +834,30 @@
     for (let i = 0; i < need; i++) items.push({ mark: mark || "●", done: i < doneRounds });
     return marksRowHtml(items);
   }
+  function selectedEns() {
+    return new Set(filteredWords().map((w) => w.en));
+  }
+  function clearedInSelected() {
+    const allowed = selectedEns();
+    return (getProgress().clearedEns || []).filter((en) => allowed.has(en)).length;
+  }
   function unClearLast(n) {
     const p = getProgress();
-    p.clearedEns = (p.clearedEns || []).slice(0, Math.max(0, p.clearedEns.length - n));
+    const allowed = selectedEns();
+    const list = (p.clearedEns || []).slice();
+    let left = Math.max(0, n);
+    for (let i = list.length - 1; i >= 0 && left > 0; i--) {
+      if (!allowed.has(list[i])) continue;
+      list.splice(i, 1);
+      left -= 1;
+    }
+    p.clearedEns = list;
     saveProgress(p);
   }
   function resetCleared() {
     const p = getProgress();
-    p.clearedEns = [];
+    const allowed = selectedEns();
+    p.clearedEns = (p.clearedEns || []).filter((en) => !allowed.has(en));
     saveProgress(p);
   }
   function sense(w, which) {
@@ -1242,7 +1258,7 @@
     filteredWords, parentWordPool, allWords, wordQueue, unclearedWords, nextRoundItems, itemsInPlace,
     placeCount, placeCleared, unlockedPlace, allWordsCleared, markCleared,
     unClearEns, unClearPlace, unClearPlaceFromStep, placeStepInfo, marksRowHtml, stepMarksHtml, unClearLast, resetCleared,
-    clearedInQueue, queuePrefix, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
+    clearedInQueue, clearedInSelected, queuePrefix, levelCount, currentLevelIndex, levelDisplay, levelJustCleared, completedLevelDisplay,
     shopPlaceRange, rescueStopCount, rescueStopInfo, rescueCursor, unClearRescueFromStop,
     prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize, parentChoicePool,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,

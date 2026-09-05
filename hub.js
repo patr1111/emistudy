@@ -227,12 +227,13 @@
     const st = K.getSettings();
     const n = K.wordQueue().length;
     const left = K.unclearedWords().length;
-    const cleared = (K.getProgress().clearedEns || []).length;
+    const clearedNow = K.clearedInSelected();
+    const clearedAll = (K.getProgress().clearedEns || []).length;
     document.getElementById("level-count").textContent =
-      "出題は " + n + "語です。" + (st.abstract ? "抽象語を含みます。" : "抽象語は外しています。") +
-      " 答えた " + (n - left) + "語は、どのゲームの本編でも出ません。";
+      "いまの級の出題は " + n + "語です。" + (st.abstract ? "抽象語を含みます。" : "抽象語は外しています。") +
+      " この級で答えた " + (n - left) + "語は、どのゲームの本編でも出ません。";
     document.getElementById("cleared-count").textContent =
-      "いまクリア済みは " + cleared + "語です。";
+      "いまの級のクリアは " + clearedNow + "語、全級の記録は " + clearedAll + "語です。";
     document.getElementById("shop-prize-text").value = st.shopPrizeText;
     document.getElementById("rescue-prize-text").value = st.rescuePrizeText;
     document.getElementById("abstract-toggle").checked = !!st.abstract;
@@ -393,31 +394,27 @@
       reader.readAsText(file, "utf-8");
     });
     document.getElementById("undo-10").addEventListener("click", () => {
-      const n = (K.getProgress().clearedEns || []).length;
-      if (!n) { K.toast("戻すクリアがありません"); return; }
-      if (!confirm("直近10語のクリアを戻します。まちがいリストはそのままです。よろしいですか？")) return;
+      const n = K.clearedInSelected();
+      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
+      if (!confirm("いま選んでいる級の直近10語のクリアを戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
       K.unClearLast(10);
       K.toast("直近のクリアを戻しました");
       refresh();
     });
     document.getElementById("undo-50").addEventListener("click", () => {
-      const n = (K.getProgress().clearedEns || []).length;
-      if (!n) { K.toast("戻すクリアがありません"); return; }
-      if (!confirm("直近50語のクリアを戻します。まちがいリストはそのままです。よろしいですか？")) return;
+      const n = K.clearedInSelected();
+      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
+      if (!confirm("いま選んでいる級の直近50語のクリアを戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
       K.unClearLast(50);
       K.toast("直近のクリアを戻しました");
       refresh();
     });
     document.getElementById("undo-all").addEventListener("click", () => {
-      const n = (K.getProgress().clearedEns || []).length;
-      if (!n) { K.toast("戻すクリアがありません"); return; }
-      if (!confirm("クリア済みを全部戻します。まちがいリストはそのままです。よろしいですか？")) return;
+      const n = K.clearedInSelected();
+      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
+      if (!confirm("いま選んでいる級のクリアを全部戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
       K.resetCleared();
-      const shop = K.getShop();
-      shop.ribbons = 0;
-      K.saveShop(shop);
-      K.saveRescue({ stage: 0, tools: [], stageEns: [] });
-      K.toast("クリアを全部戻しました");
+      K.toast("いまの級のクリアを戻しました");
       refresh();
     });
     refresh();
