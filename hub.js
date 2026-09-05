@@ -230,10 +230,10 @@
     const clearedNow = K.clearedInSelected();
     const clearedAll = (K.getProgress().clearedEns || []).length;
     document.getElementById("level-count").textContent =
-      "いまの級の出題は " + n + "語です。" + (st.abstract ? "抽象語を含みます。" : "抽象語は外しています。") +
+      "いまチェックしている級の出題は " + n + "語です。" + (st.abstract ? "抽象的な語を含みます。" : "抽象的な語は外しています。") +
       " この級で答えた " + (n - left) + "語は、どのゲームの本編でも出ません。";
     document.getElementById("cleared-count").textContent =
-      "いまの級のクリアは " + clearedNow + "語、全級の記録は " + clearedAll + "語です。";
+      "この級で終わったのは " + clearedNow + "語です。級を変えても残っている記録は、あわせて " + clearedAll + "語です。";
     document.getElementById("shop-prize-text").value = st.shopPrizeText;
     document.getElementById("rescue-prize-text").value = st.rescuePrizeText;
     document.getElementById("abstract-toggle").checked = !!st.abstract;
@@ -395,26 +395,26 @@
     });
     document.getElementById("undo-10").addEventListener("click", () => {
       const n = K.clearedInSelected();
-      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
-      if (!confirm("いま選んでいる級の直近10語のクリアを戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
+      if (!n) { K.toast("いま選んでいる級に、戻す分がありません"); return; }
+      if (!confirm("いま選んでいる級の直近10語を戻します。ほかの級の記録と、まちがえた語のリストはそのままです。よろしいですか？")) return;
       K.unClearLast(10);
       K.toast("直近のクリアを戻しました");
       refresh();
     });
     document.getElementById("undo-50").addEventListener("click", () => {
       const n = K.clearedInSelected();
-      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
-      if (!confirm("いま選んでいる級の直近50語のクリアを戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
+      if (!n) { K.toast("いま選んでいる級に、戻す分がありません"); return; }
+      if (!confirm("いま選んでいる級の直近50語を戻します。ほかの級の記録と、まちがえた語のリストはそのままです。よろしいですか？")) return;
       K.unClearLast(50);
       K.toast("直近のクリアを戻しました");
       refresh();
     });
     document.getElementById("undo-all").addEventListener("click", () => {
       const n = K.clearedInSelected();
-      if (!n) { K.toast("いまの級に戻すクリアがありません"); return; }
-      if (!confirm("いま選んでいる級のクリアを全部戻します。他の級の記録とまちがいリストはそのままです。よろしいですか？")) return;
+      if (!n) { K.toast("いま選んでいる級に、戻す分がありません"); return; }
+      if (!confirm("いま選んでいる級で終わった分を全部戻します。ほかの級の記録と、まちがえた語のリストはそのままです。よろしいですか？")) return;
       K.resetCleared();
-      K.toast("いまの級のクリアを戻しました");
+      K.toast("いま選んでいる級の分を戻しました");
       refresh();
     });
     refresh();
