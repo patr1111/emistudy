@@ -467,23 +467,23 @@ img.face.mood-sad { filter: saturate(0.55) brightness(0.88) grayscale(0.15); }
 .react .burst { font-size: 2.4rem; font-weight: 800; text-shadow: none; color: var(--ribbon); }
 .react-en { font-size: 2.1rem; font-weight: 800; margin-top: 6px; color: var(--ink); }
 .react-ja { font-size: 1.25rem; font-weight: 800; margin-top: 2px; line-height: 1.45; white-space: pre-line; color: var(--ink); }
-.react.ok { background: rgba(8, 150, 70, 0.78); }
-.react.ng { background: rgba(210, 36, 48, 0.78); }
+.react.ok { background: rgba(186, 224, 198, 0.38); }
+.react.ng { background: rgba(242, 206, 200, 0.38); }
 .react.ok .react-box {
-  background: #e6fff0; border-color: #12b886;
-  box-shadow: 0 12px 0 rgba(8, 120, 58, 0.35);
+  background: #f7fcf8; border-color: #c5e3cf;
+  box-shadow: 0 12px 0 rgba(150, 190, 165, 0.28);
 }
-.react.ok .react-box::before { content: "○ せいかい"; color: #087f5b; }
-.react.ok .burst { color: #087f5b; }
-.react.ok .react-en, .react.ok .react-ja { color: #0b7a3e; }
-.react.ok .react-face img.face { border-color: #12b886; }
+.react.ok .react-box::before { content: "○ せいかい"; color: #5a8f6c; }
+.react.ok .burst { color: #5a8f6c; }
+.react.ok .react-en, .react.ok .react-ja { color: #4a7a5c; }
+.react.ok .react-face img.face { border-color: #c5e3cf; }
 .react.ng .react-box {
-  background: #fff0f0; border-color: #fa5252;
-  box-shadow: 0 12px 0 rgba(170, 28, 40, 0.35);
+  background: #fdf8f7; border-color: #ebcfcb;
+  box-shadow: 0 12px 0 rgba(200, 170, 165, 0.28);
 }
-.react.ng .react-box::before { content: "× ざんねん"; color: #c92a2a; }
-.react.ng .burst, .react.ng .react-en, .react.ng .react-ja { color: #c92a2a; }
-.react.ng .react-face img.face { border-color: #fa5252; }
+.react.ng .react-box::before { content: "× ざんねん"; color: #a07a76; }
+.react.ng .burst, .react.ng .react-en, .react.ng .react-ja { color: #a07a76; }
+.react.ng .react-face img.face { border-color: #ebcfcb; }
 .board { display: grid; grid-template-columns: repeat(5, minmax(70px, 1fr)); gap: 10px; }
 .cell {
   border: 2px solid var(--choice-border); border-radius: 12px; padding: 10px;
