@@ -84,8 +84,13 @@ html[data-taste="kakkoii"] .btn { background: linear-gradient(#e85a4c, var(--pin
 html[data-taste="cool"] .btn { background: linear-gradient(#4aa3c0, var(--pink-deep)); }
 .btn:active { transform: translateY(2px); }
 .btn.ghost {
-  background: #fff; color: var(--pink-deep);
-  box-shadow: 0 4px 0 var(--shadow); border: 2px solid var(--choice-border);
+  background: var(--pink-deep); color: #fff;
+  box-shadow: 0 4px 0 var(--shadow); border: 2px solid var(--pink-deep);
+}
+html[data-taste="kawaii"] .btn.ghost,
+html[data-taste="kakkoii"] .btn.ghost,
+html[data-taste="cool"] .btn.ghost {
+  background: var(--pink-deep); color: #fff;
 }
 .btn.gold { background: linear-gradient(#ffe08a, #f5b942); color: #6a3b12; box-shadow: 0 5px 0 #d49a20; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
