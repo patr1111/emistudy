@@ -120,9 +120,46 @@
     if (!s.shopBuddyIds.length) s.shopBuddyIds = ids.slice();
     return s;
   }
-  function blankProgress() { return { answers: {}, clearedEns: [], clearedFromLog: false }; }
+  function blankProgress() { return { answers: {}, clearedEns: [], clearedFromLog: false, seenLevels: [] }; }
   function loggedEns(answers) {
     return Object.keys(answers || {}).filter((en) => ((answers[en] || {}).seen || 0) > 0);
+  }
+  function validLevelIds(ids) {
+    const ok = new Set(LEVELS.map((x) => x.id));
+    const out = [];
+    (ids || []).forEach((id) => {
+      if (ok.has(id) && out.indexOf(id) < 0) out.push(id);
+    });
+    return LEVELS.map((x) => x.id).filter((id) => out.indexOf(id) >= 0);
+  }
+  function levelsFromAnswers(answers) {
+    const ens = new Set(loggedEns(answers));
+    if (!ens.size) return [];
+    const found = new Set();
+    allWords().forEach((w) => {
+      if (ens.has(w.en) && w.lv) found.add(w.lv);
+    });
+    return LEVELS.map((x) => x.id).filter((id) => found.has(id));
+  }
+  function mergeSeenLevelIds() {
+    const set = new Set();
+    Array.from(arguments).forEach((ids) => {
+      validLevelIds(ids).forEach((id) => set.add(id));
+    });
+    return LEVELS.map((x) => x.id).filter((id) => set.has(id));
+  }
+  function rememberLevelsOnProgress(p, extraIds) {
+    if (!p) return false;
+    const next = mergeSeenLevelIds(p.seenLevels, levelsFromAnswers(p.answers), extraIds || []);
+    const prev = (p.seenLevels || []).join("\0");
+    const now = next.join("\0");
+    p.seenLevels = next;
+    return prev !== now;
+  }
+  function rosterLevelIds() {
+    const p = getProgress();
+    const st = getSettings();
+    return mergeSeenLevelIds(p.seenLevels, st.levels, levelsFromAnswers(p.answers));
   }
   function fillClearedFromAnswers(p) {
     if (!p) return;
@@ -142,7 +179,8 @@
     return {
       answers: Object.assign({}, src.answers || {}),
       clearedEns: Array.isArray(src.clearedEns) ? src.clearedEns.slice() : [],
-      clearedFromLog: !!src.clearedFromLog
+      clearedFromLog: !!src.clearedFromLog,
+      seenLevels: validLevelIds(src.seenLevels)
     };
   }
   function blankShop() { return { ribbons: 0, buddyByPlace: {} }; }
@@ -200,6 +238,7 @@
           clearedEns: []
         });
       const adopted = adoptLoggedWords(progress);
+      const seenChanged = rememberLevelsOnProgress(progress, []);
       const shop = s.shop && s.shop.buddyByPlace ? { ribbons: s.shop.ribbons || 0, buddyByPlace: s.shop.buddyByPlace }
         : blankShop();
       const rescue = s.rescue && typeof s.rescue.stage === "number"
@@ -220,7 +259,7 @@
         if (CORE_KEYS.indexOf(k) >= 0 || GAME_BLANKS[k]) return;
         if (s[k] && typeof s[k] === "object") out[k] = s[k];
       });
-      if (adopted) writeAll(out);
+      if (adopted || seenChanged) writeAll(out);
       return out;
     } catch (e) {
       return blankAll();
@@ -244,6 +283,7 @@
     const all = readAll();
     if (patch.names) patch = Object.assign({}, patch, { names: Object.assign({}, all.settings.names, patch.names) });
     all.settings = normalizeSettings(Object.assign({}, all.settings, patch));
+    rememberLevelsOnProgress(all.progress, all.settings.levels);
     writeAll(all);
     applyTaste(all.settings.taste);
     return all.settings;
@@ -980,6 +1020,8 @@
     p.clearedEns = p.clearedEns || [];
     if (en && p.clearedEns.indexOf(en) < 0) p.clearedEns.push(en);
     p.clearedFromLog = true;
+    const hit = allWords().find((w) => w.en === en);
+    rememberLevelsOnProgress(p, (getSettings().levels || []).concat(hit && hit.lv ? [hit.lv] : []));
     saveProgress(p);
   }
   function missEntries() {
@@ -1037,21 +1079,69 @@
     });
     return items;
   }
-  function downloadMissExcel(rows) {
-    rows = rows || missEntries();
-    const cell = (v) => "<Cell><Data ss:Type=\"String\">" + esc(v) + "</Data></Cell>";
-    let body = "<Row>" + ["英語", "日本語", "まちがい回数", "正解回数", "最後", "日付", "初めてまちがえた日"].map(cell).join("") + "</Row>";
-    rows.forEach((r) => {
-      body += "<Row>" + [r.en, String(r.ja).replace(/\n/g, " / "), r.wrong, r.right, r.last, r.lastAt, r.firstWrongAt || ""].map(cell).join("") + "</Row>";
+  function levelName(id) {
+    const hit = LEVELS.find((x) => x.id === id);
+    return hit ? hit.name : id;
+  }
+  function rosterEntries() {
+    const p = getProgress();
+    const ids = rosterLevelIds();
+    if (ids.join("\0") !== (p.seenLevels || []).join("\0")) {
+      p.seenLevels = ids;
+      saveProgress(p);
+    }
+    const set = new Set(ids);
+    const answers = p.answers || {};
+    const blank = { seen: 0, right: 0, wrong: 0, last: "", lastAt: "", firstWrongAt: "" };
+    return allWords().filter((w) => set.has(w.lv)).map((w) => {
+      const a = answers[w.en] || blank;
+      return {
+        en: w.en,
+        ja: jaText(w),
+        lv: w.lv,
+        lvName: levelName(w.lv),
+        seen: a.seen || 0,
+        right: a.right || 0,
+        wrong: a.wrong || 0,
+        last: a.last || "",
+        lastAt: a.lastAt || "",
+        firstWrongAt: a.firstWrongAt || ""
+      };
     });
-    const xml = "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"まちがえたたんご\"><Table>" + body + "</Table></Worksheet></Workbook>";
+  }
+  function downloadMissExcel() {
+    const rows = rosterEntries();
+    const total = rows.length;
+    const done = rows.filter((r) => r.seen > 0).length;
+    const missed = rows.filter((r) => r.wrong > 0).length;
+    const grades = rosterLevelIds().map(levelName).join("・") || "なし";
+    const cell = (v) => "<Cell><Data ss:Type=\"String\">" + esc(v) + "</Data></Cell>";
+    const num = (v) => "<Cell><Data ss:Type=\"Number\">" + Number(v || 0) + "</Data></Cell>";
+    let body = "<Row>" + [cell("全部"), num(total), cell("やった"), num(done), cell("まちがえた"), num(missed)].join("") + "</Row>";
+    body += "<Row>" + [cell("入っている級"), cell(grades)].join("") + "</Row>";
+    body += "<Row></Row>";
+    body += "<Row>" + ["級", "英語", "日本語", "やった回数", "まちがい回数", "正解回数", "最後", "日付", "初めてまちがえた日"].map(cell).join("") + "</Row>";
+    rows.forEach((r) => {
+      body += "<Row>" + [
+        cell(r.lvName),
+        cell(r.en),
+        cell(String(r.ja).replace(/\n/g, " / ")),
+        num(r.seen),
+        num(r.wrong),
+        num(r.right),
+        cell(r.last),
+        cell(r.lastAt),
+        cell(r.firstWrongAt || "")
+      ].join("") + "</Row>";
+    });
+    const xml = "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"たんごきろく\"><Table>" + body + "</Table></Worksheet></Workbook>";
     const blob = new Blob(["\uFEFF" + xml], { type: "application/vnd.ms-excel" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "まちがえたたんご_" + today() + ".xls";
+    a.download = "たんごきろく_" + today() + ".xls";
     a.click();
     URL.revokeObjectURL(a.href);
-    toast("まちがいリストを保存したよ（" + rows.length + "語）");
+    toast("単語リストを保存したよ（全部" + total + "／やった" + done + "／まちがい" + missed + "）");
   }
   async function exportBackup() {
     try { await migrateImagesOnce(); } catch (e) { /* テキストだけ出す */ }
@@ -1095,6 +1185,7 @@
     }
     fillClearedFromAnswers(all.progress);
     all.progress.clearedFromLog = true;
+    rememberLevelsOnProgress(all.progress, all.settings.levels);
     if (data.shop && data.shop.buddyByPlace) all.shop = { ribbons: data.shop.ribbons || 0, buddyByPlace: data.shop.buddyByPlace };
     if (data.rescue && typeof data.rescue.stage === "number") {
       all.rescue = {
@@ -1263,7 +1354,7 @@
     prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize, parentChoicePool,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
-    recordAnswer, missEntries, downloadMissExcel,
+    recordAnswer, missEntries, rosterEntries, downloadMissExcel,
     seenWordItems, clearedWordItems, missWordItems, battleStatus, pickBattleItems,
     exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, showPrize, bindGuide
   };
