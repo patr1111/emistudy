@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" class="landing" data-taste="kawaii">
 <head>
   <meta charset="UTF-8" />
@@ -166,7 +166,7 @@
             <span class="lp-num">05</span>
             <div>
               <h3>まちがえた語で弱点を潰す</h3>
-              <p>全ての単語が終わっても、まちがえた語だけでもう一度遊べます。おかいものも冒険も「たすけてリスト」から続けて、弱点を潰し込めます。親子対戦で子どもがまちがえた語も、このリストに入ります。</p>
+              <p>全ての単語が終わっても、まちがえた語だけでもう一度遊べます。おかいものも冒険も「たすけてリスト」から続けて、弱点を潰し込めます。</p>
             </div>
           </li>
         </ol>
@@ -184,7 +184,7 @@
               <time datetime="2026-09-09">2026.09.09</time>
               <div>
                 <h3>単語リストに、選んだ級の全部が入ります</h3>
-                <p>ステージ終了などで書き出すファイルには、一度選んだ級の単語が全部入ります。やった数とまちがえた数も出るので、全体の進みが見えます。級を足すと、その級の分も加わります。</p>
+                <p>ステージ終了などで書き出すファイルには、一度選んだ級の単語が全部入ります。やった数とまちがえた数も出ます。級を足すと、その級の分も加わります。ファイルの種類は、管理画面でエクセル（.xls）か CSV（UTF-8）を選べます。</p>
               </div>
             </li>
             <li>
@@ -318,6 +318,14 @@
         <p class="sub">一度選んだ級の単語が全部入ります。やった回数とまちがえた回数も出ます。級を足すと、その級の分も加わります。</p>
       </div>
       <div class="field">
+        <span class="lab">表のファイル</span>
+        <div class="seg" id="export-format-seg">
+          <label><input type="radio" name="exportFormat" value="xls" /> エクセル（.xls）</label>
+          <label><input type="radio" name="exportFormat" value="csv" /> CSV（UTF-8）</label>
+        </div>
+        <p class="sub">最初はエクセルです。CSVは文字が化けにくい UTF-8 です。表計算ソフトでも、AIに渡すときも使えます。</p>
+      </div>
+      <div class="field">
         <span class="lab">雰囲気</span>
         <div class="seg" id="taste-seg"></div>
       </div>
@@ -336,6 +344,10 @@
       <div class="field toggle-row">
         <input type="checkbox" id="hide-battle-guide" />
         <label for="hide-battle-guide">パパやママと戦おうの説明を、次回から出さない</label>
+      </div>
+      <div class="field toggle-row">
+        <input type="checkbox" id="hide-boss-guide" />
+        <label for="hide-boss-guide">さいごのしれんの説明を、次回から出さない</label>
       </div>
 
       <h2>キャラ図鑑</h2>
@@ -389,6 +401,21 @@
         </div>
         <button class="btn ghost" type="button" id="rescue-prize-clear">画像を消す</button>
       </div>
+
+      <h3 class="prize-sub">全部クリア（さいごのしれん）</h3>
+      <div class="field">
+        <span class="lab">ご褒美の文言</span>
+        <input type="text" id="boss-prize-text" maxlength="80" />
+      </div>
+      <div class="field">
+        <span class="lab">ご褒美の画像</span>
+        <input type="file" id="boss-prize-file" accept="image/*" />
+        <div class="prize" id="boss-prize-box" style="margin-top:10px">
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ご褒美" style="display:none" />
+        </div>
+        <button class="btn ghost" type="button" id="boss-prize-clear">画像を消す</button>
+      </div>
       </div>
 
       <div id="level-prize-fields">
@@ -425,3 +452,4 @@
   <script src="hub.js"></script>
 </body>
 </html>
+

@@ -236,10 +236,12 @@
       "この級で終わったのは " + clearedNow + "語です。級を変えても残っている記録は、あわせて " + clearedAll + "語です。";
     document.getElementById("shop-prize-text").value = st.shopPrizeText;
     document.getElementById("rescue-prize-text").value = st.rescuePrizeText;
+    document.getElementById("boss-prize-text").value = st.bossPrizeText;
     document.getElementById("abstract-toggle").checked = !!st.abstract;
     document.getElementById("hide-shop-guide").checked = !!st.hideShopGuide;
     document.getElementById("hide-rescue-guide").checked = !!st.hideRescueGuide;
     document.getElementById("hide-battle-guide").checked = !!st.hideBattleGuide;
+    document.getElementById("hide-boss-guide").checked = !!st.hideBossGuide;
     document.getElementById("prize-toggle").checked = st.prizeOn !== false;
     const allToggle = document.getElementById("prize-all-toggle");
     const lvToggle = document.getElementById("prize-level-toggle");
@@ -249,11 +251,15 @@
     document.querySelectorAll("#export-seg input").forEach((el) => {
       el.checked = (el.value === "on") === !!st.autoExport;
     });
+    document.querySelectorAll("#export-format-seg input").forEach((el) => {
+      el.checked = el.value === (st.exportFormat === "csv" ? "csv" : "xls");
+    });
     fillLevels();
     fillRadio(document.getElementById("kanji-seg"), K.KANJI_MODES, "kanji", st.kanji);
     fillRadio(document.getElementById("taste-seg"), K.TASTES, "taste", st.taste);
     K.previewPrize(document.getElementById("shop-prize-box"), "prize-shop", "");
     K.previewPrize(document.getElementById("rescue-prize-box"), "prize-rescue", "");
+    K.previewPrize(document.getElementById("boss-prize-box"), "prize-boss", "");
     renderLevelPrizeSlots();
     renderAtlas();
   }
@@ -270,6 +276,9 @@
     });
     document.getElementById("hide-battle-guide").addEventListener("change", (e) => {
       K.saveSettings({ hideBattleGuide: e.target.checked });
+    });
+    document.getElementById("hide-boss-guide").addEventListener("change", (e) => {
+      K.saveSettings({ hideBossGuide: e.target.checked });
     });
     document.getElementById("prize-toggle").addEventListener("change", (e) => {
       K.saveSettings({ prizeOn: e.target.checked });
@@ -319,8 +328,12 @@
     document.querySelectorAll("#export-seg input").forEach((el) => {
       el.addEventListener("change", () => K.saveSettings({ autoExport: el.value === "on" }));
     });
+    document.querySelectorAll("#export-format-seg input").forEach((el) => {
+      el.addEventListener("change", () => K.saveSettings({ exportFormat: el.value === "csv" ? "csv" : "xls" }));
+    });
     bindPrize("shop-prize-text", "shop-prize-file", "shop-prize-clear", "shop-prize-box", "shopPrizeText", "prize-shop");
     bindPrize("rescue-prize-text", "rescue-prize-file", "rescue-prize-clear", "rescue-prize-box", "rescuePrizeText", "prize-rescue");
+    bindPrize("boss-prize-text", "boss-prize-file", "boss-prize-clear", "boss-prize-box", "bossPrizeText", "prize-boss");
     document.querySelectorAll(".js-open-adult").forEach((el) => {
       el.addEventListener("click", () => show("adult"));
     });

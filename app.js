@@ -34,15 +34,18 @@
     abstract: false,
     kanji: "simple",
     autoExport: false,
+    exportFormat: "xls",
     taste: "kawaii",
     playerId: W.defaultPlayer.kawaii,
     friendId: W.defaultFriend.kawaii,
     shopBuddyIds: CHAR_BY_TASTE.kawaii.slice(),
     shopPrizeText: "全部終わったら、このご褒美がもらえるよ。",
     rescuePrizeText: "全部終わったら、このご褒美がもらえるよ。",
+    bossPrizeText: "全部終わったら、このご褒美がもらえるよ。",
     hideShopGuide: false,
     hideRescueGuide: false,
     hideBattleGuide: false,
+    hideBossGuide: false,
     prizeOn: true,
     prizeAllClearOn: true,
     prizeLevelOn: false,
@@ -101,12 +104,14 @@
     if (!TASTES.some((x) => x.id === s.taste)) s.taste = "kawaii";
     if (!s.shopPrizeText) s.shopPrizeText = s.prizeText || DEFAULT_SETTINGS.shopPrizeText;
     if (!s.rescuePrizeText) s.rescuePrizeText = s.prizeText || DEFAULT_SETTINGS.rescuePrizeText;
+    if (!s.bossPrizeText) s.bossPrizeText = DEFAULT_SETTINGS.bossPrizeText;
     if (typeof s.prizeOn !== "boolean") s.prizeOn = true;
     if (typeof s.prizeAllClearOn !== "boolean") s.prizeAllClearOn = true;
     if (typeof s.prizeLevelOn !== "boolean") s.prizeLevelOn = false;
     if (!s.levelPrizeTexts || typeof s.levelPrizeTexts !== "object") s.levelPrizeTexts = {};
     s.names = Object.assign({}, DEFAULT_NAMES, s.names || {});
     s.kanji = s.kanji || "simple";
+    s.exportFormat = s.exportFormat === "csv" ? "csv" : "xls";
     const ids = CHAR_BY_TASTE[s.taste] || CHAR_BY_TASTE.kawaii;
     const customIds = W.customCharIds || [];
     const allowed = ids.concat(customIds);
@@ -188,7 +193,8 @@
   const GAMES = [
     { id: "shop", title: "おかいものライブ", href: "shop.html" },
     { id: "rescue", title: "ともだちをたすける", href: "rescue.html" },
-    { id: "battle", title: "パパやママと戦おう", href: "battle.html" }
+    { id: "battle", title: "パパやママと戦おう", href: "battle.html" },
+    { id: "boss", title: "さいごのしれん", href: "boss.html" }
   ];
   const GAME_BLANKS = { shop: blankShop, rescue: blankRescue };
   const CORE_KEYS = ["settings", "progress", "imageIds"];
@@ -1028,7 +1034,7 @@
     const p = getProgress();
     const pool = allWords();
     return Object.entries(p.answers || {})
-      .filter(([, a]) => a.wrong > 0)
+      .filter(([, a]) => a.last === "まちがい" || (!a.last && (a.wrong || 0) > 0))
       .map(([en, a]) => {
         const w = pool.find((x) => x.en === en) || { en, k: en, s: en, j: en };
         return { en, ja: jaText(w), w: w, ...a };
@@ -1109,39 +1115,94 @@
       };
     });
   }
-  function downloadMissExcel() {
+  function rosterStats() {
+    const rows = rosterEntries();
+    let done = 0;
+    rows.forEach((r) => { if (r.seen > 0) done += 1; });
+    return { total: rows.length, done: done, missed: missEntries().length };
+  }
+  function fillMissSummary() {
+    const st = rosterStats();
+    const pill = document.getElementById("miss-count");
+    if (pill) pill.textContent = st.done ? (st.missed + " / " + st.done) : (st.missed + "ご");
+    const line = document.getElementById("miss-stat");
+    if (!line) return;
+    if (!st.total) {
+      line.textContent = "まだ級の単語がありません";
+      return;
+    }
+    if (!st.done) {
+      line.innerHTML = "全部 <b>" + st.total + "</b>ご　まだやってないよ";
+      return;
+    }
+    line.innerHTML = "やった <b>" + st.done + "</b> / 全部 <b>" + st.total + "</b>ご<br>そのうち まちがい <b>" + st.missed + "</b>ご";
+  }
+  function csvCell(v) {
+    const s = String(v == null ? "" : v);
+    if (/[",\r\n]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
+    return s;
+  }
+  function rosterTable() {
     const rows = rosterEntries();
     const total = rows.length;
     const done = rows.filter((r) => r.seen > 0).length;
     const missed = rows.filter((r) => r.wrong > 0).length;
     const grades = rosterLevelIds().map(levelName).join("・") || "なし";
-    const cell = (v) => "<Cell><Data ss:Type=\"String\">" + esc(v) + "</Data></Cell>";
-    const num = (v) => "<Cell><Data ss:Type=\"Number\">" + Number(v || 0) + "</Data></Cell>";
-    let body = "<Row>" + [cell("全部"), num(total), cell("やった"), num(done), cell("まちがえた"), num(missed)].join("") + "</Row>";
-    body += "<Row>" + [cell("入っている級"), cell(grades)].join("") + "</Row>";
-    body += "<Row></Row>";
-    body += "<Row>" + ["級", "英語", "日本語", "やった回数", "まちがい回数", "正解回数", "最後", "日付", "初めてまちがえた日"].map(cell).join("") + "</Row>";
-    rows.forEach((r) => {
-      body += "<Row>" + [
-        cell(r.lvName),
-        cell(r.en),
-        cell(String(r.ja).replace(/\n/g, " / ")),
-        num(r.seen),
-        num(r.wrong),
-        num(r.right),
-        cell(r.last),
-        cell(r.lastAt),
-        cell(r.firstWrongAt || "")
-      ].join("") + "</Row>";
-    });
-    const xml = "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"たんごきろく\"><Table>" + body + "</Table></Worksheet></Workbook>";
-    const blob = new Blob(["\uFEFF" + xml], { type: "application/vnd.ms-excel" });
+    const head = ["級", "英語", "日本語", "やった回数", "まちがい回数", "正解回数", "最後", "日付", "初めてまちがえた日"];
+    const data = rows.map((r) => [
+      r.lvName,
+      r.en,
+      String(r.ja).replace(/\n/g, " / "),
+      r.seen,
+      r.wrong,
+      r.right,
+      r.last,
+      r.lastAt,
+      r.firstWrongAt || ""
+    ]);
+    return {
+      total: total,
+      done: done,
+      missed: missed,
+      summary: [["全部", total, "やった", done, "まちがえた", missed], ["入っている級", grades], []],
+      head: head,
+      data: data
+    };
+  }
+  function downloadMissExcel() {
+    const t = rosterTable();
+    const asCsv = getSettings().exportFormat === "csv";
+    let blob;
+    let name;
+    if (asCsv) {
+      const lines = t.summary.map((row) => row.map(csvCell).join(","));
+      lines.push(t.head.map(csvCell).join(","));
+      t.data.forEach((row) => { lines.push(row.map(csvCell).join(",")); });
+      blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+      name = "たんごきろく_" + today() + ".csv";
+    } else {
+      const cell = (v) => "<Cell><Data ss:Type=\"String\">" + esc(v) + "</Data></Cell>";
+      const num = (v) => "<Cell><Data ss:Type=\"Number\">" + Number(v || 0) + "</Data></Cell>";
+      const isNum = (v) => typeof v === "number";
+      let body = "";
+      t.summary.forEach((row) => {
+        if (!row.length) { body += "<Row></Row>"; return; }
+        body += "<Row>" + row.map((v) => isNum(v) ? num(v) : cell(v)).join("") + "</Row>";
+      });
+      body += "<Row>" + t.head.map(cell).join("") + "</Row>";
+      t.data.forEach((row) => {
+        body += "<Row>" + row.map((v) => isNum(v) ? num(v) : cell(v)).join("") + "</Row>";
+      });
+      const xml = "<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"たんごきろく\"><Table>" + body + "</Table></Worksheet></Workbook>";
+      blob = new Blob(["\uFEFF" + xml], { type: "application/vnd.ms-excel" });
+      name = "たんごきろく_" + today() + ".xls";
+    }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "たんごきろく_" + today() + ".xls";
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast("単語リストを保存したよ（全部" + total + "／やった" + done + "／まちがい" + missed + "）");
+    toast("単語リストを保存したよ（全部" + t.total + "／やった" + t.done + "／まちがい" + t.missed + "）");
   }
   async function exportBackup() {
     try { await migrateImagesOnce(); } catch (e) { /* テキストだけ出す */ }
@@ -1270,6 +1331,25 @@
     }
     box.hidden = false;
     const st = getSettings();
+    if (game === "boss") {
+      const near = box.querySelector("[data-prize-near]") || box;
+      const far = box.querySelector("[data-prize-far]");
+      if (far) far.hidden = true;
+      if (!flags.all) {
+        box.hidden = true;
+        return;
+      }
+      const allText = st.bossPrizeText || DEFAULT_SETTINGS.bossPrizeText;
+      const nearText = allDone
+        ? "全部できた！ご褒美をGETだよ！"
+        : allText;
+      const nearImg = near.querySelector("[data-prize-img]");
+      const nearFb = near.querySelector("[data-prize-fallback]");
+      const nearMsg = near.querySelector("[data-prize-msg]");
+      getImage("prize-boss").then((src) => fillPrizeImg(nearImg, nearFb, src)).catch(() => fillPrizeImg(nearImg, nearFb, ""));
+      if (nearMsg) nearMsg.innerHTML = esc(nearText || "").replace(/\n/g, "<br>");
+      return;
+    }
     const allDoneNow = !!allDone || allWordsCleared();
     const cleared = clearedInQueue();
     const n = wordQueue().length;
@@ -1319,7 +1399,7 @@
   function bindGuide(game) {
     const el = document.getElementById("guide");
     if (!el) return;
-    const keys = { shop: "hideShopGuide", rescue: "hideRescueGuide", battle: "hideBattleGuide" };
+    const keys = { shop: "hideShopGuide", rescue: "hideRescueGuide", battle: "hideBattleGuide", boss: "hideBossGuide" };
     const key = keys[game] || "hideShopGuide";
     const go = document.getElementById("guide-go");
     const skip = document.getElementById("guide-skip");
@@ -1354,7 +1434,7 @@
     prizeFlags, levelPrizeKey, levelPrizeText, renderMapPrize, parentChoicePool,
     sense, jaLines, jaText, jaHtml, exampleHtml, choiceHtml, pickChoices,
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
-    recordAnswer, missEntries, rosterEntries, downloadMissExcel,
+    recordAnswer, missEntries, rosterEntries, rosterStats, fillMissSummary, downloadMissExcel,
     seenWordItems, clearedWordItems, missWordItems, battleStatus, pickBattleItems,
     exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, showPrize, bindGuide
   };
