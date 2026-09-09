@@ -1034,7 +1034,7 @@
     const p = getProgress();
     const pool = allWords();
     return Object.entries(p.answers || {})
-      .filter(([, a]) => a.wrong > 0)
+      .filter(([, a]) => a.last === "まちがい" || (!a.last && (a.wrong || 0) > 0))
       .map(([en, a]) => {
         const w = pool.find((x) => x.en === en) || { en, k: en, s: en, j: en };
         return { en, ja: jaText(w), w: w, ...a };

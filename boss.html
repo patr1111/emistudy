@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja" class="boss-game" data-taste="kawaii">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>さいごのしれん</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="title" class="screen on">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+    </nav>
+    <div class="kid-hero">
+      <img id="title-illust" src="img/illust-boss.jpg" alt="さいごのしれん" />
+      <div class="kid-hero-copy">
+        <p class="kid-kicker" id="title-kicker">ラスボス</p>
+        <h1 id="title-h">さいごのしれん</h1>
+        <p class="kid-stat" id="title-level"></p>
+      </div>
+    </div>
+    <div id="lock-box" class="stage-card lock-box" hidden>
+      <h2>これはまだ遊べません</h2>
+      <p>いままちがえている単語がないと、しれんに入れません。</p>
+      <p class="sub">おかいものや冒険でまちがえた語が、ここに集まります。リストで正解すると消えます。</p>
+      <div class="btn-row">
+        <a class="btn" href="shop.html">おかいものライブ</a>
+        <a class="btn" href="rescue.html">ともだちをたすける</a>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+    <div id="start-box" class="kid-actions" hidden>
+      <button class="btn" id="go-start" type="button">しれんに いどむ</button>
+    </div>
+  </section>
+
+  <section id="quiz" class="screen">
+    <nav class="game-bar">
+      <a class="btn ghost" href="index.html">トップページ</a>
+      <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
+      <div class="pill" id="q-place">さいごのしれん</div>
+      <div class="pill" id="q-hp">のこり 0</div>
+    </nav>
+    <div class="quiz-banner" id="quiz-banner"><img alt="" /></div>
+    <div class="boss-hp">
+      <p class="boss-hp-lab" id="hp-lab">敵の体力</p>
+      <div class="boss-hp-bar" aria-hidden="true"><div class="boss-hp-fill" id="hp-fill"></div></div>
+      <div class="btn-row boss-later-row">
+        <button class="btn gold" id="quiz-later" type="button">続きは今度</button>
+      </div>
+    </div>
+    <div class="stage-card">
+      <div class="english-row">
+        <div class="english" id="english">ability</div>
+        <button type="button" class="speak-btn" id="speak-word" aria-label="英単語を聞く">🔊</button>
+      </div>
+      <div class="choices" id="choices"></div>
+      <p class="example-row">
+        <span class="example" id="example"></span>
+        <button type="button" class="speak-btn" id="speak-ex" aria-label="例文を聞く">🔊</button>
+      </p>
+    </div>
+    <div class="buddy-row">
+      <div class="buddy-wrap" id="buddy-wrap"></div>
+    </div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="stage-card" style="text-align:center">
+      <div class="quiz-banner"><img id="result-banner" src="img/illust-boss.jpg" alt="" /></div>
+      <div id="result-buddy" style="margin:8px 0"></div>
+      <div class="english" id="score-big">0</div>
+      <p class="sub" id="result-msg"></p>
+      <div class="prize">
+        <div class="prize-near" data-prize-near>
+          <div class="prize-fallback" data-prize-fallback>🎁</div>
+          <img data-prize-img alt="ごほうび" style="display:none" />
+          <p data-prize-msg></p>
+        </div>
+        <div class="prize-far" data-prize-far hidden>
+          <p class="prize-far-lab" data-prize-far-lab>全部終わったら</p>
+          <div class="prize-fallback" data-prize-far-fallback>🎁</div>
+          <img data-prize-far-img alt="全部クリアのごほうび" style="display:none" />
+          <p data-prize-far-msg></p>
+        </div>
+      </div>
+      <div id="result-review"></div>
+      <div class="btn-row">
+        <button class="btn" id="result-again" type="button">もういちど</button>
+        <button class="btn gold" id="result-save" type="button">リストをほぞん</button>
+        <button class="btn ghost" id="result-home" type="button">ゲームの最初</button>
+        <a class="btn ghost" href="index.html">トップページ</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="story" id="story">
+    <div class="story-card">
+      <div class="quiz-banner"><img id="story-img" alt="" /></div>
+      <p id="story-text"></p>
+      <button class="btn" id="story-go" type="button">いどむ！</button>
+    </div>
+  </div>
+  <div class="story" id="phase">
+    <div class="story-card">
+      <p class="boss-phase-kicker">ラスボス</p>
+      <p id="phase-text">まだ終わらない！</p>
+      <button class="btn" id="phase-go" type="button">つづける</button>
+    </div>
+  </div>
+  <div class="react" id="react">
+    <div class="react-box">
+      <div class="react-face" id="react-face"></div>
+      <div class="burst" id="react-burst"></div>
+      <div class="react-en" id="react-en"></div>
+      <div class="react-ja" id="react-ja"></div>
+    </div>
+  </div>
+  <div class="guide" id="guide">
+    <div class="guide-card">
+      <img class="guide-photo" src="img/illust-boss.jpg" alt="" />
+      <p class="guide-kicker">さいごのしれん</p>
+      <h2>進め方</h2>
+      <ol>
+        <li>いまもまちがえている単語だけが出ます。おかいもの・冒険・対戦でまちがえた語が対象です。</li>
+        <li>正解すると、その語はリストから消えます。まちがえると、少しあとに同じ語がもどってきます。</li>
+        <li>敵の体力は、今までやった単語のうち、まだまちがえている分です。すでに正解した分は、戦いの最初から削れています。</li>
+        <li>「続きは今度」を押すと、単語の表が保存されます。つぎに来たときは、そこから続けられます。</li>
+      </ol>
+      <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
+      <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="words.js"></script>
+  <script src="world.js"></script>
+  <script src="app.js"></script>
+  <script src="chars.js"></script>
+  <script src="boss.js"></script>
+</body>
+</html>

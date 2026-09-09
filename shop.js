@@ -277,7 +277,7 @@
 
   function renderMiss() {
     const rows = K.missEntries();
-    document.getElementById("miss-count").textContent = rows.length + "ご";
+    K.fillMissSummary();
     document.getElementById("miss-list").innerHTML = rows.length
       ? rows.map((r) => "<div class='miss-row'><span>" + K.esc(r.en) + "</span><span class='ja'>" + K.esc(r.ja).replace(/\n/g, "<br>") + "</span><span>×" + r.wrong + "</span></div>").join("")
       : "まだ まちがいは ないよ。";

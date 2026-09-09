@@ -127,9 +127,25 @@
     ]
   };
   const rescueCheers = ["その調子！", "いい感じ！", "そのちょうしだ！"];
+  const bossTitles = {
+    kawaii: { kicker: "ラスボス", title: "よるの ファイナルステージ" },
+    kakkoii: { kicker: "ラスボス", title: "まおうの しろ" },
+    cool: { kicker: "ラスボス", title: "さいごの とう" }
+  };
+  const bossScenes = {
+    kawaii: "scene-boss-kawaii",
+    kakkoii: "scene-boss-kakkoii",
+    cool: "scene-boss-cool"
+  };
+  const bossStories = {
+    kawaii: "まちがえたことばが、よるのステージにもどってきた。うたで たおして！",
+    kakkoii: "いちど まけたことばが、まおうのしろで まっている。やまないで！",
+    cool: "とりこぼしたことばが、さいごのとうで 待っている。静かに、たしかめよう。"
+  };
 
   global.KiramekiWorld = {
     charasByTaste, allCharas, customCharas, customCharIds, charIdsByTaste, allCharIds, defaultNames,
-    defaultPlayer, defaultFriend, shopPlaces, shopScenes, giftScene, shopStories, rescuePlaces, rescueCheers
+    defaultPlayer, defaultFriend, shopPlaces, shopScenes, giftScene, shopStories, rescuePlaces, rescueCheers,
+    bossTitles, bossScenes, bossStories
   };
 })(window);

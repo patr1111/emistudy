@@ -252,8 +252,7 @@
   }
   function renderMiss() {
     const rows = K.missEntries();
-    const count = document.getElementById("miss-count");
-    if (count) count.textContent = rows.length + "ご";
+    K.fillMissSummary();
     const list = document.getElementById("miss-list");
     if (!list) return;
     list.innerHTML = rows.length

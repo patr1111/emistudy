@@ -692,7 +692,8 @@ html.landing #adult .role-btn.on {
 .lp-story { max-width: 42em; margin-bottom: 28px; }
 .lp-story p { color: var(--lp-muted); line-height: 1.9; font-size: 0.98rem; margin-bottom: 14px; }
 .lp-story a { color: var(--lp-ink); }
-.lp-games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.lp-games { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+.lp-game-boss { box-shadow: inset 0 0 0 1px rgba(90, 60, 20, 0.28); }
 .lp-game {
   display: grid; grid-template-rows: 260px auto;
   background: var(--lp-card); color: inherit; text-decoration: none;
@@ -791,6 +792,13 @@ html:not(.landing) .stage-card {
   padding: 4px 8px 28px;
 }
 .kid-h { text-align: center; margin: 6px 0 14px; }
+.miss-summary {
+  text-align: center; font-weight: 800; line-height: 1.6;
+  margin: -6px 12px 14px; font-size: 1.02rem;
+}
+.miss-summary b { color: var(--ribbon); }
+#miss .game-bar { justify-content: center; }
+#miss .game-bar .pill { margin-left: 0; }
 .game-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 12px;
@@ -869,6 +877,31 @@ html:not(.landing) .stage-card {
 .lock-box[hidden], #start-box[hidden] { display: none !important; }
 .lock-box h2 { margin: 0 0 10px; font-size: 1.35rem; }
 .lock-box p { font-weight: 700; line-height: 1.65; margin: 0 0 10px; }
+html.boss-game body {
+  background: linear-gradient(180deg, #1c1428 0%, var(--bg1) 52%, var(--bg3) 100%);
+}
+html.boss-game .stage-card {
+  border: 3px solid color-mix(in srgb, var(--ribbon) 55%, #2a1020);
+}
+.boss-hp { margin: 4px 8px 14px; }
+.boss-hp-lab {
+  font-weight: 800; text-align: center; margin-bottom: 8px; font-size: 1.02rem;
+  color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35);
+}
+.boss-later-row { margin: 10px 0 0; justify-content: center; }
+.boss-hp-bar {
+  height: 20px; border-radius: 999px; overflow: hidden;
+  background: rgba(20, 10, 24, 0.45); border: 3px solid #fff;
+  box-shadow: 0 4px 0 rgba(0,0,0,.2);
+}
+.boss-hp-fill {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #ff5a7a, #ffd56a);
+  transition: width 0.45s ease;
+}
+.boss-phase-kicker {
+  letter-spacing: 0.18em; font-weight: 800; color: var(--ribbon); margin-bottom: 8px;
+}
 #start-box { max-width: 520px; margin: 0 auto 28px; }
 .parent-lv-card {
   background: #fff; border: 3px solid var(--choice-border); border-radius: 20px;
