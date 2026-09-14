@@ -46,6 +46,14 @@
     </nav>
     <div class="quiz-banner" id="quiz-banner"><img alt="" /></div>
     <div class="boss-hp">
+      <div class="boss-roster" id="boss-roster">
+        <div class="boss-king" id="boss-king">
+          <img id="boss-king-img" alt="ボス" />
+          <span class="boss-tag">ボス</span>
+        </div>
+        <div class="boss-minions" id="boss-minions" aria-label="手下"></div>
+      </div>
+      <p class="boss-fanfare" id="boss-fanfare"></p>
       <p class="boss-hp-lab" id="hp-lab">敵の体力</p>
       <div class="boss-hp-bar" aria-hidden="true"><div class="boss-hp-fill" id="hp-fill"></div></div>
       <div class="btn-row boss-later-row">
@@ -128,6 +136,7 @@
         <li>いまもまちがえている単語だけが出ます。おかいもの・冒険・対戦でまちがえた語が対象です。</li>
         <li>正解すると、その語はリストから消えます。まちがえると、少しあとに同じ語がもどってきます。</li>
         <li>敵の体力は、今までやった単語のうち、まだまちがえている分です。すでに正解した分は、戦いの最初から削れています。</li>
+        <li>のこり50問ごとに手下が一匹います。手下A、手下Bと名前がついていて、いまたたかっている相手のゲージが減ります。そのゲージが尽きると手下をたおせます。手下を全部たおすと、ボスのゲージになります。</li>
         <li>「続きは今度」を押すと、単語の表が保存されます。つぎに来たときは、そこから続けられます。</li>
       </ol>
       <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>

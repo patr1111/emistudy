@@ -3,6 +3,7 @@
   const C = window.KiramekiChars;
   const W = window.KiramekiWorld;
   const CHOICES = 6;
+  const MINION_HP = 50;
   let quiz = null;
   let roundToken = 0;
 
@@ -96,20 +97,122 @@
     };
   }
 
-  function hpMax() {
-    const done = (K.rosterStats() || {}).done || 0;
-    const left = uniqueLeft();
-    return Math.max(done, left, 1);
+  function minionCount(left) {
+    return Math.floor(Math.max(0, left) / MINION_HP);
+  }
+  function minionName(idx) {
+    return "手下" + (idx < 26 ? String.fromCharCode(65 + idx) : String(idx + 1));
+  }
+  function nextMinionIndex() {
+    const idxs = liveMinions().map((el) => Number(el.dataset.idx));
+    if (!idxs.length) return 0;
+    return Math.max.apply(null, idxs) + 1;
+  }
+  function currentTarget(left) {
+    const n = minionCount(left);
+    if (n > 0) {
+      const current = liveMinions()[0];
+      const name = (current && current.dataset.name) || minionName(0);
+      const rem = left % MINION_HP;
+      const hp = rem === 0 ? 1 : rem;
+      return { name: name, hp: hp, max: MINION_HP, kind: "minion" };
+    }
+    return { name: "ボス", hp: left, max: MINION_HP, kind: "boss" };
+  }
+  function markCurrent(left) {
+    const n = minionCount(left);
+    const king = document.getElementById("boss-king");
+    liveMinions().forEach((el, i) => el.classList.toggle("now", n > 0 && i === 0));
+    if (king) king.classList.toggle("now", n === 0 && left > 0);
+  }
+  function waitMs(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  function castSrc() {
+    const t = tasteId();
+    const cast = (W.bossCast && (W.bossCast[t] || W.bossCast.kawaii)) || {
+      boss: "boss-kawaii", minion: "minion-kawaii"
+    };
+    return { boss: "img/" + cast.boss + ".jpg", minion: "img/" + cast.minion + ".jpg" };
+  }
+  function liveMinions() {
+    return [...document.querySelectorAll("#boss-minions .boss-minion:not(.out)")];
+  }
+  function addMinionEl(animate, idx) {
+    const box = document.getElementById("boss-minions");
+    if (!box) return null;
+    if (idx == null) idx = nextMinionIndex();
+    const name = minionName(idx);
+    const el = document.createElement("div");
+    el.className = "boss-minion" + (animate ? " in" : "");
+    el.dataset.idx = String(idx);
+    el.dataset.name = name;
+    const img = document.createElement("img");
+    img.alt = name;
+    img.src = castSrc().minion;
+    const tag = document.createElement("span");
+    tag.className = "boss-tag";
+    tag.textContent = name;
+    el.appendChild(img);
+    el.appendChild(tag);
+    box.appendChild(el);
+    return el;
+  }
+  function snapMinions(left) {
+    const box = document.getElementById("boss-minions");
+    if (!box) return;
+    box.innerHTML = "";
+    const n = minionCount(left);
+    for (let i = 0; i < n; i++) addMinionEl(false, i);
+  }
+  function growMinions(left) {
+    const want = minionCount(left);
+    const live = liveMinions();
+    for (let i = live.length; i < want; i++) addMinionEl(true);
+  }
+  function fadeOneMinion() {
+    const el = liveMinions()[0];
+    if (!el) return Promise.resolve();
+    el.classList.remove("in", "now");
+    void el.offsetWidth;
+    el.classList.add("out");
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        if (el.parentNode) el.remove();
+        resolve();
+      };
+      el.addEventListener("transitionend", done, { once: true });
+      setTimeout(done, 1000);
+    });
+  }
+  async function showFanfare(text) {
+    const el = document.getElementById("boss-fanfare");
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add("on");
+    await waitMs(1400);
+    el.classList.remove("on");
+    el.textContent = "";
   }
   function renderHp() {
     const left = uniqueLeft();
-    const maxHp = hpMax();
+    const t = currentTarget(left);
     const lab = document.getElementById("hp-lab");
     const pill = document.getElementById("q-hp");
     const fill = document.getElementById("hp-fill");
-    if (lab) lab.textContent = "敵の体力";
+    const king = document.getElementById("boss-king-img");
+    if (lab) lab.textContent = t.name + "の体力";
     if (pill) pill.textContent = "のこり " + left;
-    if (fill) fill.style.width = Math.max(0, Math.min(100, Math.round((left / maxHp) * 100))) + "%";
+    if (fill) fill.style.width = Math.max(0, Math.min(100, Math.round((t.hp / Math.max(t.max, 1)) * 100))) + "%";
+    if (king) king.src = castSrc().boss;
+    markCurrent(left);
+  }
+  function resetRoster() {
+    snapMinions(uniqueLeft());
+    renderHp();
   }
 
   async function setBuddyMood(mood) {
@@ -156,24 +259,6 @@
     await K.waitReact(K.flashTimes(ok).wait);
   }
 
-  function maybePhase() {
-    const start = quiz ? quiz.startN : 0;
-    if (!quiz || start < 4) return "";
-    const left = uniqueLeft();
-    const beaten = start - left;
-    const p1 = Math.ceil(start / 3);
-    const p2 = Math.ceil(start * 2 / 3);
-    if (!quiz.phases.p1 && beaten >= p1 && left > 0) {
-      quiz.phases.p1 = true;
-      return "三分の一 たおした！　まだ終わらない！";
-    }
-    if (!quiz.phases.p2 && beaten >= p2 && left > 0) {
-      quiz.phases.p2 = true;
-      return "三分の二 たおした！　さいごまで！";
-    }
-    return "";
-  }
-
   function showPhase(text) {
     return new Promise((resolve) => {
       const box = document.getElementById("phase");
@@ -199,16 +284,21 @@
     if (!ok) btn.classList.add("ng");
     K.recordAnswer(w.en, ok);
     quiz.log.push({ en: w.en, w: w, ok: ok });
+    const prevLeft = uniqueLeft();
     quiz.queue.shift();
     if (!ok) insertLater(quiz.queue, w);
     if (quiz.queue.length) saveRun();
     else clearSavedRun();
+    const left = uniqueLeft();
+    const beatMinion = ok && minionCount(prevLeft) > minionCount(left);
     renderHp();
     setBuddyMood(ok ? "happy" : "sad");
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;
-    const phase = maybePhase();
-    if (phase) await showPhase(phase);
+    if (beatMinion) {
+      const beatenName = (liveMinions()[0] && liveMinions()[0].dataset.name) || "手下";
+      await Promise.all([fadeOneMinion(), showFanfare(beatenName + "をたおした！")]);
+    }
     if (!quiz || quiz.token !== token) return;
     if (!quiz.queue.length) finishBoss();
     else renderQuestion();
@@ -264,6 +354,7 @@
     };
     saveRun();
     show("quiz");
+    resetRoster();
     renderQuestion();
   }
   async function resumeBoss() {
@@ -286,6 +377,7 @@
     };
     saveRun();
     show("quiz");
+    resetRoster();
     renderQuestion();
     if (!extraN) return;
     await showPhase("てきは" + extraN + "人の仲間を呼んだ");
@@ -293,6 +385,7 @@
     extras.forEach((w) => quiz.queue.push(w));
     quiz.startN = uniqueLeft();
     renderHp();
+    growMinions(uniqueLeft());
     saveRun();
   }
 

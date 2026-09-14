@@ -142,10 +142,15 @@
     kakkoii: "いちど まけたことばが、まおうのしろで まっている。やまないで！",
     cool: "とりこぼしたことばが、さいごのとうで 待っている。静かに、たしかめよう。"
   };
+  const bossCast = {
+    kawaii: { boss: "boss-kawaii", minion: "minion-kawaii" },
+    kakkoii: { boss: "boss-kakkoii", minion: "minion-kakkoii" },
+    cool: { boss: "boss-cool", minion: "minion-cool" }
+  };
 
   global.KiramekiWorld = {
     charasByTaste, allCharas, customCharas, customCharIds, charIdsByTaste, allCharIds, defaultNames,
     defaultPlayer, defaultFriend, shopPlaces, shopScenes, giftScene, shopStories, rescuePlaces, rescueCheers,
-    bossTitles, bossScenes, bossStories
+    bossTitles, bossScenes, bossStories, bossCast
   };
 })(window);
