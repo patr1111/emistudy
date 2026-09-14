@@ -955,7 +955,6 @@ html.boss-game .stage-card {
   font-weight: 800; text-align: center; margin-bottom: 8px; font-size: 1.02rem;
   color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35);
 }
-.boss-later-row { margin: 10px 0 0; justify-content: center; }
 .boss-hp-bar {
   height: 22px; border-radius: 999px; overflow: hidden;
   background: rgba(20, 10, 24, 0.45); border: 3px solid #fff;
