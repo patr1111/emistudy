@@ -1322,6 +1322,62 @@
       setTimeout(() => finish(false), ms);
     });
   }
+  let fxPreloaded = false;
+  function preloadComboFx() {
+    if (fxPreloaded) return;
+    fxPreloaded = true;
+    ["img/fx/star.png", "img/fx/spark.png", "img/fx/cheer-left.png", "img/fx/cheer-right.png", "img/fx/burst.png"].forEach((src) => {
+      const im = new Image();
+      im.src = src;
+    });
+  }
+  function comboTier(ok, streak) {
+    if (!ok) return -1;
+    if (streak >= 5) return 3;
+    if (streak >= 3) return 2;
+    if (streak >= 2) return 1;
+    return 0;
+  }
+  function playStageCombo(stage, ok, streak) {
+    preloadComboFx();
+    if (!stage) return Promise.resolve();
+    const fx = stage.querySelector(".mini-stage-fx");
+    const yell = stage.querySelector(".mini-yell");
+    const tier = comboTier(ok, streak);
+    stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");
+    void stage.offsetWidth;
+    if (fx) fx.innerHTML = "";
+    if (yell) yell.textContent = "";
+    if (tier < 0) {
+      stage.classList.add("combo-break");
+      if (yell) yell.textContent = "おしい！";
+      return new Promise((r) => setTimeout(r, 420));
+    }
+    stage.classList.add(tier === 0 ? "combo-hit" : ("combo-" + tier));
+    if (yell) yell.textContent = ["やった！", "いいね！", "すごい！", "さいこう！"][Math.min(tier, 3)];
+    const n = tier === 0 ? 6 : tier === 1 ? 12 : tier === 2 ? 18 : 26;
+    const spread = 52 + tier * 30;
+    for (let i = 0; i < n; i++) {
+      const img = document.createElement("img");
+      img.className = "spark-img" + ((tier >= 2 && i % 2 === 0) || (tier >= 3 && i % 3 === 0) ? " big" : "");
+      img.src = (i % 3 === 0) ? "img/fx/spark.png" : "img/fx/star.png";
+      img.alt = "";
+      const ang = (Math.PI * 2 * i) / n + (i % 2 ? 0.28 : 0);
+      img.style.setProperty("--sx", Math.round(Math.cos(ang) * spread) + "px");
+      img.style.setProperty("--sy", Math.round(Math.sin(ang) * spread - 8) + "px");
+      img.style.animationDelay = (i * 20) + "ms";
+      if (fx) fx.appendChild(img);
+    }
+    const waitMs = tier >= 3 ? 980 : tier === 2 ? 800 : tier === 1 ? 660 : 520;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");
+        if (fx) fx.innerHTML = "";
+        if (yell) yell.textContent = "";
+        resolve();
+      }, waitMs);
+    });
+  }
   function showPrize(box, allDone, game) {
     if (!box) return;
     const flags = prizeFlags();
@@ -1436,6 +1492,6 @@
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, rosterEntries, rosterStats, fillMissSummary, downloadMissExcel,
     seenWordItems, clearedWordItems, missWordItems, battleStatus, pickBattleItems,
-    exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, showPrize, bindGuide
+    exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, playStageCombo, preloadComboFx, showPrize, bindGuide
   };
 })(window);

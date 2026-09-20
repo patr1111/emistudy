@@ -153,30 +153,89 @@
     ].map((h) => "<div class='buddy-wrap'>" + h + "</div>").join("");
     document.getElementById(boxId).innerHTML = html;
   }
+  function quizMark() {
+    return (quiz && quiz.review) ? "💌" : ((placeAt(livePlace()).mark) || "★");
+  }
+  let stageMood = "";
+  function fillHold(popLast) {
+    const el = document.getElementById("play-stage-hold");
+    if (!el || !quiz) return;
+    const icon = quizMark();
+    const got = quiz.log.filter((x) => x.ok);
+    el.innerHTML = got.map((x, i) => {
+      const pop = popLast && i === got.length - 1 ? " pop" : "";
+      return "<span class='basket-bit" + pop + "'>" + icon + "</span>";
+    }).join("");
+  }
+  function flyToHold(fromEl) {
+    const slot = document.getElementById("play-stage-hold") || document.getElementById("play-stage-me");
+    if (!fromEl || !slot) return Promise.resolve();
+    const icon = quizMark();
+    const a = fromEl.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "fly-item";
+    ghost.textContent = icon;
+    const x0 = a.left + a.width / 2;
+    const y0 = a.top + a.height / 2;
+    ghost.style.left = x0 + "px";
+    ghost.style.top = y0 + "px";
+    ghost.style.transform = "translate(0,0) scale(1)";
+    document.body.appendChild(ghost);
+    const dx = b.left + b.width / 2 - x0;
+    const dy = b.top + b.height / 2 - y0;
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          ghost.style.transform = "translate(" + dx + "px," + dy + "px) scale(0.55)";
+          ghost.style.opacity = "0.2";
+        });
+      });
+      setTimeout(() => {
+        ghost.remove();
+        resolve();
+      }, 380);
+    });
+  }
+  async function paintStage(mood) {
+    const bg = document.getElementById("play-stage-bg");
+    if (bg) bg.src = quiz.review ? "img/illust-rescue.jpg" : ("img/" + placeAt(livePlace()).scene + ".jpg");
+    const meBox = document.getElementById("play-stage-me");
+    const palBox = document.getElementById("play-stage-pal");
+    if (meBox && palBox && (stageMood !== mood || !meBox.children.length)) {
+      stageMood = mood;
+      meBox.innerHTML = await C.faceHtml(player(), mood, 72);
+      palBox.innerHTML = await C.faceHtml(friend(), mood, 72);
+    }
+  }
   function renderGauge() {
-    const mark = (quiz && quiz.review) ? "💌" : ((placeAt(livePlace()).mark) || "★");
+    const mark = quizMark();
+    const lab = document.getElementById("play-collect-lab");
+    if (lab) lab.textContent = mark;
     const g = document.getElementById("gauge");
     g.innerHTML = "";
-    for (let i = 0; i < TOTAL; i++) {
+    const n = (quiz && quiz.items) ? quiz.items.length : TOTAL;
+    const last = quiz ? quiz.log.length - 1 : -1;
+    for (let i = 0; i < n; i++) {
       const d = document.createElement("div");
       if (quiz && i < quiz.log.length) {
-        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad");
+        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad") + (i === last ? " pop" : "");
         d.textContent = quiz.log[i].ok ? mark : "💧";
       } else {
-        d.className = "gdot" + (quiz && i === quiz.i ? " on" : "");
-        d.textContent = quiz && i === quiz.i ? mark : "";
+        d.className = "gdot wait";
+        d.textContent = mark;
       }
       g.appendChild(d);
     }
   }
-  function renderQuestion() {
+  async function renderQuestion() {
     const w = quiz.items[quiz.i];
     document.getElementById("english").textContent = w.en;
     const ex = document.getElementById("example");
     if (ex) ex.innerHTML = K.exampleHtml(w);
     K.setSpeakText(w.en, w.ex || "");
-    const playBanner = document.querySelector("#play-banner img");
-    if (playBanner) playBanner.src = quiz.review ? "img/illust-rescue.jpg" : ("img/" + placeAt(livePlace()).scene + ".jpg");
+    await paintStage((quiz.streak || 0) >= 2 ? "happy" : "normal");
+    fillHold(false);
     renderGauge();
     const box = document.getElementById("choices");
     box.innerHTML = "";
@@ -217,10 +276,17 @@
     });
     if (!ok) btn.classList.add("ng");
     if (ok) quiz.score += 1;
+    quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     K.recordAnswer(w.en, ok);
     quiz.log.push({ en: w.en, w: w, ok: ok });
-    renderGauge();
     await flash(ok, w);
+    if (!quiz || quiz.token !== token) return;
+    if (ok) await flyToHold(btn);
+    if (!quiz || quiz.token !== token) return;
+    fillHold(true);
+    renderGauge();
+    await paintStage(ok ? "happy" : "sad");
+    if (K.playStageCombo) await K.playStageCombo(document.getElementById("play-stage"), ok, quiz.streak || 0);
     if (!quiz || quiz.token !== token) return;
     quiz.i += 1;
     if (quiz.i >= quiz.items.length) finishStage();
@@ -264,8 +330,9 @@
     if (!items.length) { K.toast("まだ まちがいは ないよ"); return; }
     document.getElementById("stageTitle").textContent = "たすけてリスト";
     roundToken += 1;
-    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, review: true };
-    await renderFaces("play-faces");
+    quiz = { items: items, i: 0, log: [], score: 0, streak: 0, token: roundToken, review: true };
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     show("play");
     renderQuestion();
   }
@@ -333,8 +400,9 @@
     }
     document.getElementById("stageTitle").textContent = placeAt(cur.stop).name;
     roundToken += 1;
-    quiz = { items: items, i: 0, log: [], score: 0, token: roundToken, place: cur.stop, level: cur.level, prefixBefore: K.queuePrefix() };
-    await renderFaces("play-faces");
+    quiz = { items: items, i: 0, log: [], score: 0, streak: 0, token: roundToken, place: cur.stop, level: cur.level, prefixBefore: K.queuePrefix() };
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     show("play");
     renderQuestion();
   }

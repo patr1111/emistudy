@@ -18,6 +18,7 @@
   let quiz = null;
   let pendingTrip = null;
   let roundToken = 0;
+  let mapPopPlace = -1;
 
   function placeRow(p) {
     const list = shopPlaces();
@@ -43,10 +44,17 @@
   function renderMap() {
     const range = K.shopPlaceRange();
     const open = K.unlockedPlace();
-    const mark = { kawaii: "🎀", kakkoii: "⚡", cool: "◆" }[tasteId()] || "🎀";
     const lvEl = document.getElementById("map-lv");
     if (lvEl) lvEl.textContent = "Lv" + K.levelDisplay();
-    document.getElementById("map-stat").textContent = mark + " " + Math.floor((K.getProgress().clearedEns || []).length / ROUND) + " ／ まちがい " + K.missEntries().length;
+    const nowRow = placeRow(Math.min(open, range.end - 1));
+    const allDone = range.start < range.end && Array.from({ length: range.end - range.start }, (_, i) => range.start + i)
+      .every((p) => {
+        const info = K.placeStepInfo(p);
+        return info.slice.length > 0 && info.doneRounds >= info.need;
+      });
+    document.getElementById("map-stat").textContent = allDone
+      ? "おつかいおわり"
+      : "いま " + nowRow[1] + nowRow[0];
     const grid = document.getElementById("map-grid");
     grid.innerHTML = "";
     const cleared = new Set(K.getProgress().clearedEns || []);
@@ -56,8 +64,11 @@
       const fullyDone = info.slice.length > 0 && info.doneRounds >= info.need;
       const el = document.createElement("button");
       el.type = "button";
-      el.className = "place" + (p > open ? " lock" : "") + (p === open ? " now" : "") + (fullyDone ? " done" : "");
-      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' /><div class='place-cap'><div class='nm'>" + placeRow(p)[0] + "</div><div class='st'>" + K.stepMarksHtml(placeRow(p)[1], info.doneRounds, info.need) + "</div></div>";
+      el.className = "place" + (p > open ? " lock" : "") + (p === open && !fullyDone ? " now" : "") + (fullyDone ? " done" : "");
+      if (p === open && p === mapPopPlace && !fullyDone) el.classList.add("place-pop");
+      el.innerHTML = "<img class='place-img' src='" + sceneSrc(p) + "' alt='' />"
+        + (fullyDone ? "<span class='place-bag' aria-hidden='true'>🛍</span>" : "")
+        + "<div class='place-cap'><div class='nm'>" + placeRow(p)[0] + "</div><div class='st'>" + K.stepMarksHtml(placeRow(p)[1], info.doneRounds, info.need) + "</div></div>";
       if (anyDone) {
         const redo = document.createElement("span");
         redo.className = "redo-btn";
@@ -70,6 +81,14 @@
       }
       if (p <= open && !fullyDone) el.addEventListener("click", () => openPick(p));
       grid.appendChild(el);
+    }
+    if (mapPopPlace >= 0) {
+      const popped = grid.querySelector(".place-pop");
+      if (popped) {
+        popped.addEventListener("animationend", () => { mapPopPlace = -1; }, { once: true });
+      } else {
+        mapPopPlace = -1;
+      }
     }
     K.renderMapPrize(document.getElementById("map-prize"), "shop");
   }
@@ -136,10 +155,12 @@
     }
     roundToken += 1;
     quiz = {
-      place, items, i: 0, log: [], review: !!customWords, buddy: buddy || C.shopChars()[0], token: roundToken,
+      place, items, i: 0, log: [], streak: 0, review: !!customWords, buddy: buddy || C.shopChars()[0], token: roundToken,
       prefixBefore: K.queuePrefix()
     };
     show("quiz");
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     renderQuestion();
   }
   function quitQuiz() {
@@ -159,39 +180,80 @@
     }
   }
 
+  let stageMood = "";
   function renderGauge() {
     const icon = placeMark(quiz.place);
     const g = document.getElementById("gauge");
     g.innerHTML = "";
+    const last = quiz.log.length - 1;
     for (let i = 0; i < quiz.items.length; i++) {
       const d = document.createElement("div");
       if (i < quiz.log.length) {
-        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad");
+        d.className = "gdot on" + (quiz.log[i].ok ? "" : " bad") + (i === last ? " pop" : "");
         d.textContent = quiz.log[i].ok ? icon : "💧";
       } else {
-        d.className = "gdot" + (i === quiz.i ? " on" : "");
-        d.textContent = i === quiz.i ? icon : "";
+        d.className = "gdot wait";
+        d.textContent = icon;
       }
       g.appendChild(d);
     }
   }
-
-  async function setBuddyMood(mood) {
-    const wrap = document.getElementById("buddy-wrap");
-    wrap.className = "buddy-wrap " + (mood || "");
-    wrap.innerHTML = await C.faceHtml(quiz.buddy, mood || "normal", 120)
-      + "<div class='buddy-name' id='buddy-line'></div>";
-    document.getElementById("buddy-line").textContent = nm(quiz.buddy) + "と お買い物";
+  function flyToHold(fromEl) {
+    const slot = document.getElementById("quiz-stage-hold") || document.querySelector("#quiz-stage-buddy");
+    if (!fromEl || !slot) return Promise.resolve();
+    const icon = placeMark(quiz.place);
+    const a = fromEl.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "fly-item";
+    ghost.textContent = icon;
+    const x0 = a.left + a.width / 2;
+    const y0 = a.top + a.height / 2;
+    ghost.style.left = x0 + "px";
+    ghost.style.top = y0 + "px";
+    ghost.style.transform = "translate(0,0) scale(1)";
+    document.body.appendChild(ghost);
+    const dx = b.left + b.width / 2 - x0;
+    const dy = b.top + b.height / 2 - y0;
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          ghost.style.transform = "translate(" + dx + "px," + dy + "px) scale(0.55)";
+          ghost.style.opacity = "0.2";
+        });
+      });
+      setTimeout(() => {
+        ghost.remove();
+        resolve();
+      }, 380);
+    });
+  }
+  function fillBasket(el, log, popLast) {
+    if (!el) return;
+    const icon = placeMark(quiz.place);
+    const got = (log || []).filter((x) => x.ok);
+    el.innerHTML = got.map((x, i) => {
+      const pop = popLast && i === got.length - 1 ? " pop" : "";
+      return "<span class='basket-bit" + pop + "'>" + icon + "</span>";
+    }).join("");
+  }
+  async function paintStage(mood) {
+    const bg = document.getElementById("quiz-stage-bg");
+    if (bg) bg.src = quiz.review ? giftSrc() : sceneSrc(quiz.place);
+    const box = document.getElementById("quiz-stage-buddy");
+    if (box && (stageMood !== mood || !box.children.length)) {
+      stageMood = mood;
+      box.innerHTML = await C.faceHtml(quiz.buddy, mood, 84);
+    }
   }
 
-  function renderQuestion() {
+  async function renderQuestion() {
     const w = quiz.items[quiz.i];
     document.getElementById("q-place").textContent = quiz.review ? "たすけてリスト" : pl(quiz.place);
     document.getElementById("q-buddy-pill").textContent = nm(quiz.buddy);
-    const banner = document.querySelector("#quiz-banner img");
-    if (banner) banner.src = quiz.review ? giftSrc() : sceneSrc(quiz.place);
+    await paintStage((quiz.streak || 0) >= 2 ? "happy" : "normal");
+    fillBasket(document.getElementById("quiz-stage-hold"), quiz.log, false);
     renderGauge();
-    setBuddyMood("normal");
     document.getElementById("english").textContent = w.en;
     const ex = document.getElementById("example");
     if (ex) ex.innerHTML = K.exampleHtml(w);
@@ -231,10 +293,16 @@
     });
     if (!ok) btn.classList.add("ng");
     K.recordAnswer(w.en, ok);
+    quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     quiz.log.push({ en: w.en, w: w, ok: ok });
-    renderGauge();
-    setBuddyMood(ok ? "happy" : "sad");
     await flash(ok, w);
+    if (!quiz || quiz.token !== token) return;
+    if (ok) await flyToHold(btn);
+    if (!quiz || quiz.token !== token) return;
+    fillBasket(document.getElementById("quiz-stage-hold"), quiz.log, true);
+    renderGauge();
+    await paintStage(ok ? "happy" : "sad");
+    if (K.playStageCombo) await K.playStageCombo(document.getElementById("quiz-stage"), ok, quiz.streak || 0);
     if (!quiz || quiz.token !== token) return;
     quiz.i += 1;
     if (quiz.i >= quiz.items.length) finishRound();
@@ -244,7 +312,9 @@
   async function finishRound() {
     if (!quiz) return;
     const okN = quiz.log.filter((x) => x.ok).length;
+    const itemName = placeGet(quiz.place);
     if (!quiz.review) {
+      const openBefore = K.unlockedPlace();
       const before = quiz.prefixBefore != null ? quiz.prefixBefore : K.queuePrefix();
       K.markCleared(quiz.items);
       extra.ribbons = Math.floor((K.getProgress().clearedEns || []).length / ROUND);
@@ -252,22 +322,30 @@
       K.maybeAutoExport();
       const after = K.queuePrefix();
       const leveled = K.levelJustCleared(before, after);
+      const openAfter = K.unlockedPlace();
+      if (openAfter !== openBefore) mapPopPlace = openAfter;
       const up = document.getElementById("level-up-line");
       if (up) {
         up.hidden = !(leveled && !K.allWordsCleared());
+        up.classList.toggle("fanfare", !up.hidden);
         if (!up.hidden) up.textContent = "お買い物レベルが上がった！　Lv" + K.levelDisplay();
       }
     } else {
       const up = document.getElementById("level-up-line");
-      if (up) up.hidden = true;
+      if (up) {
+        up.hidden = true;
+        up.classList.remove("fanfare");
+      }
     }
     document.getElementById("result-buddy").innerHTML =
       await C.faceHtml(quiz.buddy, okN >= 7 ? "happy" : "sad", 100)
       + "<div class='buddy-name'>" + nm(quiz.buddy) + "</div>";
-    const ico = placeMark(quiz.place);
-    document.getElementById("score-big").textContent = ico.repeat(okN);
-    document.getElementById("score-big").style.fontSize = "1.6rem";
-    document.getElementById("result-msg").textContent = okN + "もん できたよ。";
+    fillBasket(document.getElementById("result-basket-items"), quiz.log, false);
+    const bowl = document.querySelector("#result-basket .basket-bowl");
+    if (bowl) bowl.classList.toggle("full", okN >= 7);
+    if (okN <= 0) document.getElementById("result-msg").textContent = "こんどは カゴに いれよう";
+    else if (okN >= quiz.items.length) document.getElementById("result-msg").textContent = "カゴが いっぱいに なったよ！";
+    else document.getElementById("result-msg").textContent = "カゴに " + itemName + "が はいったよ";
     K.showPrize(document.querySelector("#result .prize"), K.allWordsCleared(), "shop");
     document.getElementById("result-review").innerHTML = quiz.log.map((x) =>
       "<div class='miss-row'><span>" + K.esc(x.en) + "</span><span class='ja'>" + (x.ok ? "○ " : "× ") + K.esc(K.jaText(x.w)).replace(/\n/g, "<br>") + "</span></div>"

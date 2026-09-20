@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260920" />
 </head>
 <body>
   <section id="title" class="screen on">
@@ -36,7 +36,7 @@
       <div class="pill" id="map-stat">リボン 0</div>
     </nav>
     <h1 class="kid-h">おかいものマップ　<span id="map-lv">Lv1</span></h1>
-    <p class="kid-hint">いまのレベルの店だけ見えるよ。3か所いったらレベルアップ！</p>
+    <p class="kid-hint">光っている店にいこう</p>
     <div class="map-prizes" id="map-prize" hidden>
       <div class="map-prize" data-map-level hidden>
         <p class="map-prize-lab" data-map-prize-lab>このレベルをクリアしたら</p>
@@ -65,15 +65,30 @@
     <div class="char-grid" id="char-grid"></div>
   </section>
 
-  <section id="quiz" class="screen">
+  <section id="quiz" class="screen fold-quiz">
     <nav class="game-bar">
       <a class="btn ghost" href="index.html">トップページ</a>
       <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
       <div class="pill" id="q-place">いちごのおか</div>
       <div class="pill" id="q-buddy-pill">きらり</div>
     </nav>
-    <div class="quiz-banner" id="quiz-banner"><img alt="" /></div>
-    <div class="gauge" id="gauge"></div>
+    <div class="mini-stage" id="quiz-stage">
+      <img class="mini-stage-bg" id="quiz-stage-bg" alt="" />
+      <img class="mini-burst" src="img/fx/burst.png" alt="" />
+      <div class="mini-stage-shine" aria-hidden="true"></div>
+      <img class="mini-cheer mini-cheer-l" src="img/fx/cheer-left.png" alt="" />
+      <img class="mini-cheer mini-cheer-r" src="img/fx/cheer-right.png" alt="" />
+      <div class="mini-stage-fx" id="quiz-stage-fx"></div>
+      <div class="mini-yell" aria-hidden="true"></div>
+      <div class="mini-stage-cast">
+        <div class="mini-stage-buddy" id="quiz-stage-buddy"></div>
+        <div class="mini-stage-hold" id="quiz-stage-hold"></div>
+      </div>
+      <div class="quiz-collect mini-stage-dots">
+        <span class="quiz-collect-lab" aria-hidden="true">🛒</span>
+        <div class="gauge" id="gauge"></div>
+      </div>
+    </div>
     <div class="stage-card">
       <div class="english-row">
         <div class="english" id="english">ability</div>
@@ -85,16 +100,16 @@
         <button type="button" class="speak-btn" id="speak-ex" aria-label="例文を聞く">🔊</button>
       </p>
     </div>
-    <div class="buddy-row">
-      <div class="buddy-wrap" id="buddy-wrap"></div>
-    </div>
   </section>
 
   <section id="result" class="screen">
     <div class="stage-card" style="text-align:center">
       <div class="quiz-banner"><img src="img/scene-gift.jpg" alt="" /></div>
       <div id="result-buddy" style="margin:8px 0"></div>
-      <div class="english" id="score-big">0</div>
+      <div class="result-basket" id="result-basket">
+        <div class="basket-bowl" aria-hidden="true">🛒</div>
+        <div class="basket-items" id="result-basket-items"></div>
+      </div>
       <p class="level-up-line" id="level-up-line" hidden></p>
       <p class="sub" id="result-msg"></p>
       <div class="prize">
@@ -167,7 +182,7 @@
         <li>いまのレベルの店が3か所だけ出ます。1つの店はアイコンが5こ（最後のレベルは少ないことがあります）。終わったこには×がつきます。</li>
         <li>3か所おわるとレベルアップします。次のレベルの店は、そのあと見えます。</li>
         <li>一緒に行く仲間を1人選ぶと、短い物語のあと10問が始まります。</li>
-        <li>英語を見て、日本語を6つの中から選びます。紛らわしい引っかけはありません。</li>
+        <li>英語を見て、日本語を6つの中から選びます。正解すると、上のカゴのしるしが1つ点きます。紛らわしい引っかけはありません。</li>
         <li>答えた語は、まちがえても本編ではもう出ません。おかいもの・冒険・対戦のどれで遊んでも同じです。まちがえた語は「たすけてリスト」からやり直せます。</li>
         <li>「記録を消す」では、何個めから消すかを選べます。途中の「やめる」は、答えた分だけ本編から外れます。</li>
       </ol>
@@ -178,8 +193,8 @@
   <div class="toast" id="toast"></div>
   <script src="words.js"></script>
   <script src="world.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260920"></script>
   <script src="chars.js"></script>
-  <script src="shop.js"></script>
+  <script src="shop.js?v=20260920"></script>
 </body>
 </html>

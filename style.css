@@ -1098,6 +1098,263 @@ html.boss-game .stage-card {
   .mode-grid { grid-template-columns: 1fr; }
 }
 .inventory { justify-content: center; margin-top: 12px; }
+.choice:active:not([disabled]):not(.ok):not(.ng) {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 2px 0 var(--shadow);
+}
+.gdot.wait { opacity: 0.32; }
+.gdot.pop { animation: pop 0.35s ease; }
+.map-grid { padding: 10px 4px 18px; align-items: start; }
+.place.now {
+  transform: scale(1.06);
+  z-index: 2;
+}
+.place.place-pop { animation: placePop 0.45s ease; }
+@keyframes placePop {
+  from { transform: scale(0.88); }
+  55% { transform: scale(1.1); }
+  to { transform: scale(1.06); }
+}
+.place-bag {
+  position: absolute; top: 8px; right: 8px; z-index: 1;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem; box-shadow: 0 2px 0 var(--shadow);
+}
+.quiz-collect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.quiz-collect-lab { font-size: 1.4rem; line-height: 1; }
+.fold-quiz { padding: 10px 14px 12px; }
+.fold-quiz .game-bar { margin-bottom: 6px; }
+.fold-quiz .gauge { margin: 0; flex-wrap: nowrap; }
+.fold-quiz .stage-card { padding: 10px 14px 8px; }
+.fold-quiz .english { font-size: 1.9rem; margin: 2px 0 6px; }
+.fold-quiz .choices { gap: 8px; }
+.fold-quiz .choice { min-height: 68px; padding: 6px 6px; }
+.fold-quiz .example-row { margin-top: 6px; }
+.mini-stage {
+  position: relative;
+  height: 148px;
+  margin: 0 0 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 0 var(--shadow);
+}
+.mini-stage-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 42%;
+  display: block;
+}
+.mini-burst {
+  position: absolute; left: 50%; top: 40%;
+  width: 150px; height: 150px;
+  margin: -75px 0 0 -75px;
+  opacity: 0; z-index: 1; pointer-events: none;
+}
+.mini-stage-shine {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse at 50% 80%, rgba(255,255,220,0.55), transparent 62%);
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.mini-cheer {
+  position: absolute; bottom: 22px; height: 96px; width: auto;
+  max-width: 42%;
+  object-fit: contain; object-position: bottom;
+  z-index: 4; opacity: 0; pointer-events: none;
+  filter: drop-shadow(0 3px 0 rgba(0,0,0,0.18));
+}
+.mini-cheer-l { left: 4px; }
+.mini-cheer-r { right: 4px; }
+.mini-stage-fx {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden;
+}
+.mini-yell {
+  position: absolute; top: 6px; left: 50%;
+  transform: translateX(-50%) scale(0.7);
+  z-index: 6; opacity: 0; pointer-events: none;
+  font-weight: 800; font-size: 1.35rem; color: #6a3b12;
+  background: #fff8e8; border: 3px solid #ffe27a; border-radius: 999px;
+  padding: 3px 16px; box-shadow: 0 3px 0 rgba(0,0,0,0.12);
+  white-space: nowrap;
+}
+.mini-stage-cast {
+  position: absolute; left: 0; right: 0; bottom: 28px;
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 8px; z-index: 3;
+}
+.mini-stage-buddy img.face, .mini-stage-buddy span.face {
+  width: 84px; height: 84px; object-fit: cover; border-radius: 50%;
+  border: 3px solid #fff; box-shadow: 0 3px 0 rgba(0,0,0,0.16);
+  background: #fff8f0; display: block;
+}
+.mini-stage-hold {
+  min-width: 36px; min-height: 36px;
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  justify-content: center; gap: 1px;
+  max-width: 88px; padding-bottom: 4px;
+}
+.mini-stage-hold .basket-bit { font-size: 1.05rem; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.2)); }
+.mini-stage-dots {
+  position: absolute; left: 0; right: 0; bottom: 4px; z-index: 2;
+  margin: 0; gap: 6px;
+}
+.mini-stage-dots .gdot {
+  width: 22px; height: 22px; font-size: 0.85rem;
+  background: rgba(255,255,255,0.88);
+}
+.spark-img {
+  position: absolute; left: 50%; top: 46%;
+  width: 30px; height: 30px;
+  margin: -15px 0 0 -15px;
+  animation: sparkFly 0.8s ease-out forwards;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.16));
+}
+.spark-img.big { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+.mini-stage.combo-hit .mini-stage-buddy img,
+.mini-stage.combo-hit .mini-stage-buddy span { animation: bounce 0.4s ease; }
+.mini-stage.combo-hit .mini-yell,
+.mini-stage.combo-1 .mini-yell,
+.mini-stage.combo-2 .mini-yell,
+.mini-stage.combo-3 .mini-yell,
+.mini-stage.combo-break .mini-yell {
+  opacity: 1; animation: yellPop 0.35s ease forwards;
+}
+.mini-stage.combo-hit .mini-stage-shine { opacity: 0.4; }
+.mini-stage.combo-hit .mini-burst { opacity: 0.35; animation: burstPop 0.5s ease; }
+.mini-stage.combo-1 .mini-cheer {
+  opacity: 1; animation: cheerIn 0.45s ease forwards;
+}
+.mini-stage.combo-1 .mini-stage-shine { opacity: 0.6; }
+.mini-stage.combo-1 .mini-stage-buddy img,
+.mini-stage.combo-1 .mini-stage-buddy span { animation: bounceBig 0.5s ease; }
+.mini-stage.combo-1 .mini-burst { opacity: 0.55; animation: burstPop 0.55s ease; }
+.mini-stage.combo-2 .mini-cheer {
+  opacity: 1; animation: cheerBounce 0.55s ease;
+}
+.mini-stage.combo-2 .mini-stage-shine { opacity: 0.82; animation: shinePulse 0.45s ease; }
+.mini-stage.combo-2 .mini-stage-buddy img,
+.mini-stage.combo-2 .mini-stage-buddy span { animation: bounceBig 0.55s ease; }
+.mini-stage.combo-2 .mini-burst { opacity: 0.9; animation: burstSpin 0.7s ease; }
+.mini-stage.combo-2 .mini-yell { font-size: 1.5rem; }
+.mini-stage.combo-3 {
+  box-shadow: 0 0 0 4px #ffe27a, 0 8px 0 var(--shadow);
+}
+.mini-stage.combo-3 .mini-cheer {
+  opacity: 1; animation: cheerJump 0.65s ease;
+}
+.mini-stage.combo-3 .mini-stage-shine {
+  opacity: 1;
+  background: radial-gradient(ellipse at 50% 70%, rgba(255,250,180,0.9), rgba(255,160,200,0.28) 48%, transparent 70%);
+  animation: shinePulse 0.35s ease infinite;
+}
+.mini-stage.combo-3 .mini-stage-buddy img,
+.mini-stage.combo-3 .mini-stage-buddy span { animation: bounceHuge 0.65s ease; }
+.mini-stage.combo-3 .mini-burst {
+  opacity: 1; width: 210px; height: 210px; margin: -105px 0 0 -105px;
+  animation: burstSpin 0.45s linear infinite;
+}
+.mini-stage.combo-3 .mini-yell {
+  font-size: 1.65rem; background: #ffe27a;
+}
+.mini-stage.combo-break .mini-stage-buddy img,
+.mini-stage.combo-break .mini-stage-buddy span { animation: shake 0.4s ease; }
+.mini-stage.combo-break { filter: saturate(0.75); }
+.mini-stage.combo-break .mini-yell {
+  background: #fff0f0; border-color: #ffc9c9; color: #8a4040;
+}
+@keyframes shinePulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes bounceHuge {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0); }
+  30% { transform: translateY(-22px) scale(1.22) rotate(-6deg); }
+  55% { transform: translateY(-8px) scale(1.12) rotate(5deg); }
+}
+@keyframes sparkFly {
+  0% { transform: translate(0, 0) scale(0.25) rotate(-20deg); opacity: 1; }
+  100% { transform: translate(var(--sx), var(--sy)) scale(1.2) rotate(25deg); opacity: 0; }
+}
+@keyframes yellPop {
+  0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  70% { transform: translateX(-50%) scale(1.12); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@keyframes cheerIn {
+  0% { opacity: 0; transform: translateY(16px) scale(0.8); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes cheerBounce {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  35% { transform: translateY(-14px) scale(1.08); opacity: 1; }
+}
+@keyframes cheerJump {
+  0%, 100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
+  25% { transform: translateY(-18px) rotate(-8deg) scale(1.1); opacity: 1; }
+  55% { transform: translateY(-6px) rotate(7deg) scale(1.06); opacity: 1; }
+}
+@keyframes burstPop {
+  0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 0.55; }
+}
+@keyframes burstSpin {
+  0% { transform: scale(0.5) rotate(0); opacity: 0.4; }
+  100% { transform: scale(1.15) rotate(80deg); opacity: 0.85; }
+}
+.result-basket {
+  position: relative;
+  max-width: 320px;
+  margin: 8px auto 4px;
+  min-height: 120px;
+  padding: 10px 12px 12px;
+  background: #fff;
+  border: 3px solid var(--choice-border);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--shadow);
+  text-align: center;
+}
+.basket-bowl { font-size: 2.4rem; line-height: 1; }
+.result-basket .basket-bowl { font-size: 3rem; }
+.basket-bowl.full { animation: bounce 0.45s ease; }
+.basket-items {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
+  min-height: 1.4em; margin-top: 4px;
+}
+.basket-bit { font-size: 1.25rem; line-height: 1.2; }
+.basket-bit.pop { animation: pop 0.35s ease; }
+.fly-item {
+  position: fixed; z-index: 50; pointer-events: none;
+  font-size: 2rem; line-height: 1;
+  margin-left: -0.5em; margin-top: -0.5em;
+  transition: transform 0.42s ease, opacity 0.42s ease;
+  filter: drop-shadow(0 3px 0 rgba(0,0,0,0.12));
+  will-change: transform, opacity;
+}
+.buddy-wrap.combo img, .buddy-wrap.combo.happy img {
+  animation: bounceBig 0.5s ease;
+}
+@keyframes bounceBig {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-16px) scale(1.16); }
+}
+.level-up-line.fanfare {
+  display: inline-block;
+  background: #ffe27a;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  padding: 8px 18px;
+  color: #3a1a10;
+  box-shadow: 0 4px 0 rgba(0,0,0,.16);
+  animation: bossFanfare 0.35s ease;
+}
 @media (max-width: 720px) {
   .kid-hero img { height: 280px; object-position: center 10%; }
   .quiz-banner img { height: 88px; }
@@ -1112,4 +1369,11 @@ html.boss-game .stage-card {
   .boss-king img { width: 72px; height: 72px; }
   .boss-minion { width: 62px; }
   .boss-minion img { width: 44px; height: 44px; }
+  .place.now { transform: scale(1.03); }
+  .fold-quiz .choice { min-height: 70px; }
+  .mini-stage { height: 128px; }
+  .mini-stage-buddy img.face, .mini-stage-buddy span.face { width: 70px; height: 70px; }
+  .mini-stage-cast { bottom: 24px; }
+  .mini-cheer { height: 78px; bottom: 18px; max-width: 40%; }
+  .mini-yell { font-size: 1.15rem; padding: 2px 12px; }
 }
