@@ -1354,7 +1354,10 @@
       return new Promise((r) => setTimeout(r, 420));
     }
     stage.classList.add(tier === 0 ? "combo-hit" : ("combo-" + tier));
-    if (yell) yell.textContent = ["やった！", "いいね！", "すごい！", "さいこう！"][Math.min(tier, 3)];
+    if (yell) {
+      if (streak >= 2) yell.innerHTML = "<span class='combo-n'>" + streak + "</span>連続！";
+      else yell.textContent = "やった！";
+    }
     const n = tier === 0 ? 6 : tier === 1 ? 12 : tier === 2 ? 18 : 26;
     const spread = 52 + tier * 30;
     for (let i = 0; i < n; i++) {
@@ -1368,7 +1371,7 @@
       img.style.animationDelay = (i * 20) + "ms";
       if (fx) fx.appendChild(img);
     }
-    const waitMs = tier >= 3 ? 980 : tier === 2 ? 800 : tier === 1 ? 660 : 520;
+    const waitMs = tier >= 3 ? 1100 : tier === 2 ? 900 : tier === 1 ? 760 : 520;
     return new Promise((resolve) => {
       setTimeout(() => {
         stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");

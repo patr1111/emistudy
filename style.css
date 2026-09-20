@@ -1243,7 +1243,7 @@ html.boss-game .stage-card {
 .mini-stage.combo-2 .mini-stage-buddy img,
 .mini-stage.combo-2 .mini-stage-buddy span { animation: bounceBig 0.55s ease; }
 .mini-stage.combo-2 .mini-burst { opacity: 0.9; animation: burstSpin 0.7s ease; }
-.mini-stage.combo-2 .mini-yell { font-size: 1.5rem; }
+.mini-stage.combo-2 .mini-yell { font-size: 1.55rem; }
 .mini-stage.combo-3 {
   box-shadow: 0 0 0 4px #ffe27a, 0 8px 0 var(--shadow);
 }
@@ -1262,7 +1262,19 @@ html.boss-game .stage-card {
   animation: burstSpin 0.45s linear infinite;
 }
 .mini-stage.combo-3 .mini-yell {
-  font-size: 1.65rem; background: #ffe27a;
+  font-size: 1.7rem; background: #ffe27a;
+}
+.mini-yell .combo-n {
+  display: inline-block;
+  font-size: 1.35em;
+  line-height: 1;
+  margin-right: 1px;
+  animation: comboNumPunch 0.42s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes comboNumPunch {
+  0% { transform: scale(0.2) rotate(-12deg); }
+  55% { transform: scale(1.4) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
 }
 .mini-stage.combo-break .mini-stage-buddy img,
 .mini-stage.combo-break .mini-stage-buddy span { animation: shake 0.4s ease; }
