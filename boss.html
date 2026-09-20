@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260920e" />
 </head>
 <body>
   <section id="title" class="screen on">
@@ -37,7 +37,7 @@
     </div>
   </section>
 
-  <section id="quiz" class="screen">
+  <section id="quiz" class="screen fold-quiz">
     <nav class="game-bar">
       <a class="btn ghost" href="index.html">トップページ</a>
       <button class="btn ghost" id="quiz-quit" type="button">やめる</button>
@@ -45,14 +45,26 @@
       <div class="pill" id="q-place">さいごのしれん</div>
       <div class="pill" id="q-hp">のこり 0</div>
     </nav>
-    <div class="quiz-banner" id="quiz-banner"><img alt="" /></div>
+    <div class="mini-stage" id="quiz-stage">
+      <img class="mini-stage-bg" id="quiz-stage-bg" alt="" />
+      <img class="mini-burst" src="img/fx/burst.png" alt="" />
+      <div class="mini-stage-shine" aria-hidden="true"></div>
+      <img class="mini-cheer mini-cheer-l" src="img/fx/cheer-left.png" alt="" />
+      <img class="mini-cheer mini-cheer-r" src="img/fx/cheer-right.png" alt="" />
+      <div class="mini-stage-fx" id="quiz-stage-fx"></div>
+      <div class="mini-yell" aria-hidden="true"></div>
+      <div class="mini-stage-cast">
+        <div class="mini-stage-buddy" id="quiz-stage-buddy"></div>
+      </div>
+    </div>
     <div class="boss-hp">
       <div class="boss-roster" id="boss-roster">
+        <div class="boss-minions boss-minions-l" id="boss-minions-l" aria-label="左側の手下"></div>
         <div class="boss-king" id="boss-king">
           <img id="boss-king-img" alt="ボス" />
           <span class="boss-tag">ボス</span>
         </div>
-        <div class="boss-minions" id="boss-minions" aria-label="手下"></div>
+        <div class="boss-minions boss-minions-r" id="boss-minions-r" aria-label="右側の手下"></div>
       </div>
       <p class="boss-fanfare" id="boss-fanfare"></p>
       <p class="boss-hp-lab" id="hp-lab">敵の体力</p>
@@ -68,9 +80,6 @@
         <span class="example" id="example"></span>
         <button type="button" class="speak-btn" id="speak-ex" aria-label="例文を聞く">🔊</button>
       </p>
-    </div>
-    <div class="buddy-row">
-      <div class="buddy-wrap" id="buddy-wrap"></div>
     </div>
   </section>
 
@@ -134,7 +143,7 @@
         <li>いまもまちがえている単語だけが出ます。おかいもの・冒険・対戦でまちがえた語が対象です。</li>
         <li>正解すると、その語はリストから消えます。まちがえると、少しあとに同じ語がもどってきます。</li>
         <li>敵の体力は、今までやった単語のうち、まだまちがえている分です。すでに正解した分は、戦いの最初から削れています。</li>
-        <li>のこり50問ごとに手下が一匹います。手下A、手下Bと名前がついていて、いまたたかっている相手のゲージが減ります。そのゲージが尽きると手下をたおせます。手下を全部たおすと、ボスのゲージになります。</li>
+        <li>のこり50問ごとに手下が一匹います。ボスは真ん中、手下は左右に並び、いちばん外側から倒します。いまたたかっている相手のゲージが減り、尽きるとその手下をたおせます。手下を全部たおすと、ボスのゲージになります。</li>
         <li>「続きは今度」を押すと、単語の表が保存されます。つぎに来たときは、そこから続けられます。</li>
       </ol>
       <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
@@ -144,8 +153,8 @@
   <div class="toast" id="toast"></div>
   <script src="words.js"></script>
   <script src="world.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260920e"></script>
   <script src="chars.js"></script>
-  <script src="boss.js"></script>
+  <script src="boss.js?v=20260920e"></script>
 </body>
 </html>

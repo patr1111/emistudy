@@ -886,12 +886,14 @@ html.boss-game .stage-card {
 .boss-hp { margin: 4px 8px 14px; }
 .boss-roster {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
   gap: 10px;
   margin: 0 0 10px;
+  width: 100%;
 }
-.boss-king { text-align: center; width: 96px; }
+.boss-king { text-align: center; width: 96px; flex: 0 0 auto; }
 .boss-king img {
   width: 88px; height: 88px; object-fit: cover; object-position: center 20%;
   border-radius: 50%; border: 4px solid rgba(255,255,255,.75); background: #fff;
@@ -904,11 +906,13 @@ html.boss-game .stage-card {
   filter: none;
 }
 .boss-minions {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
-  min-height: 0; width: 100%;
+  display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 8px;
+  flex: 1 1 0; min-width: 0; min-height: 0;
 }
+.boss-minions-l { justify-content: flex-end; }
+.boss-minions-r { justify-content: flex-start; }
 .boss-minion {
-  width: 72px; text-align: center;
+  width: 72px; text-align: center; flex: 0 0 auto;
   transition: opacity 0.85s ease, transform 0.85s ease, filter 0.85s ease;
 }
 .boss-minion img {
@@ -1138,6 +1142,27 @@ html.boss-game .stage-card {
 .fold-quiz .choices { gap: 8px; }
 .fold-quiz .choice { min-height: 68px; padding: 6px 6px; }
 .fold-quiz .example-row { margin-top: 6px; }
+.fold-quiz .boss-hp { margin: 0 0 8px; }
+.fold-quiz .boss-roster {
+  gap: 8px;
+  margin: 0 0 6px;
+}
+.fold-quiz .boss-king { width: 58px; }
+.fold-quiz .boss-king img { width: 52px; height: 52px; border-width: 3px; }
+.fold-quiz .boss-minion { width: 48px; }
+.fold-quiz .boss-minion img { width: 38px; height: 38px; }
+.fold-quiz .boss-tag { font-size: 0.68rem; margin-top: 2px; }
+.fold-quiz .boss-hp-lab { font-size: 0.88rem; margin-bottom: 4px; }
+.fold-quiz .boss-hp-bar { height: 16px; }
+.fold-quiz .turn-banner { margin: 0 auto 6px; padding: 4px 12px; font-size: 1rem; }
+.fold-quiz .round-progress { font-size: 1.2rem; margin: 0 auto 6px; }
+.fold-quiz .vs-board { margin: 0 auto 8px; }
+.fold-quiz .vs-board th, .fold-quiz .vs-board td { padding: 4px 4px; font-size: 1.1rem; min-width: 2.6em; }
+.fold-quiz .vs-board thead th { font-size: 0.7rem; }
+.fold-quiz .vs-board [data-vs-kid] img.face,
+.fold-quiz .vs-board [data-vs-par] img.face { width: 32px; height: 32px; }
+html.boss-game .fold-quiz .mini-stage { height: 120px; }
+.fold-quiz:has(.vs-board) .mini-stage { height: 112px; }
 .mini-stage {
   position: relative;
   height: 148px;

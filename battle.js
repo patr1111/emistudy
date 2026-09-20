@@ -6,6 +6,7 @@
   const ROUND_LEN = [6, 6, 8];
   let WORDS = [];
   let quiz = null;
+  let stageMood = "";
 
   function show(id) {
     if (id !== "quiz") {
@@ -142,15 +143,19 @@
       document.getElementById("lock-count").textContent = why;
     }
   }
+  async function paintStage(mood) {
+    const bg = document.getElementById("quiz-stage-bg");
+    if (bg) bg.src = "img/illust-battle.jpg";
+    const box = document.getElementById("quiz-stage-buddy");
+    const kidTurn = quiz ? isKid(quiz.i) : true;
+    const key = (kidTurn ? "k" : "p") + ":" + (mood || "normal");
+    if (box && (stageMood !== key || !box.children.length)) {
+      stageMood = key;
+      box.innerHTML = await turnFaceHtml(kidTurn, mood || "normal", 84);
+    }
+  }
   async function setTurnFace(mood) {
-    const kidTurn = isKid(quiz.i);
-    const wrap = document.getElementById("buddy-wrap");
-    wrap.className = "buddy-wrap " + (mood || "");
-    wrap.innerHTML = await turnFaceHtml(kidTurn, mood || "normal", 120)
-      + "<div class='buddy-name' id='buddy-line'></div>";
-    document.getElementById("buddy-line").textContent = kidTurn
-      ? kidName() + "の ばん"
-      : "パパ・ママの ばん";
+    await paintStage(mood);
   }
   function renderTurn() {
     const kidTurn = isKid(quiz.i);
@@ -168,7 +173,8 @@
   function renderQuestion() {
     const w = quiz.items[quiz.i];
     renderTurn();
-    setTurnFace("normal");
+    const streak = isKid(quiz.i) ? (quiz.kidStreak || 0) : (quiz.parStreak || 0);
+    setTurnFace(streak >= 2 ? "happy" : "normal");
     document.getElementById("english").textContent = w.en;
     const ex = document.getElementById("example");
     if (ex) ex.innerHTML = K.exampleHtml(w);
@@ -276,9 +282,14 @@
     });
     if (!ok) btn.classList.add("ng");
     quiz.log.push({ i: turnI, en: w.en, w: w, ok: ok });
+    if (isKid(turnI)) quiz.kidStreak = ok ? (quiz.kidStreak || 0) + 1 : 0;
+    else quiz.parStreak = ok ? (quiz.parStreak || 0) + 1 : 0;
+    const streak = isKid(turnI) ? (quiz.kidStreak || 0) : (quiz.parStreak || 0);
     renderTurn();
-    setTurnFace(ok ? "happy" : "sad");
     await flash(ok, w);
+    if (!quiz || quiz.token !== token) return;
+    await paintStage(ok ? "happy" : "sad");
+    if (K.playStageCombo) await K.playStageCombo(document.getElementById("quiz-stage"), ok, streak);
     if (!quiz || quiz.token !== token) return;
     quiz.i += 1;
     afterQuestion();
@@ -325,16 +336,21 @@
       i: 0,
       log: [],
       token: Date.now(),
+      kidStreak: 0,
+      parStreak: 0,
       kidPool: K.wordQueue(),
       parentPool: K.parentChoicePool()
     };
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     show("quiz");
     document.getElementById("english").textContent = "";
     document.getElementById("choices").innerHTML = "";
     const ex = document.getElementById("example");
     if (ex) ex.innerHTML = "";
     document.getElementById("turn-banner").textContent = "";
-    document.getElementById("buddy-wrap").innerHTML = "";
+    const stageBuddy = document.getElementById("quiz-stage-buddy");
+    if (stageBuddy) stageBuddy.innerHTML = "";
     await fillBoardFaces();
     fillBoard(document.getElementById("vs-board"), 0);
     fillProgress(0);

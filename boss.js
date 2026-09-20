@@ -6,6 +6,7 @@
   const MINION_HP = 50;
   let quiz = null;
   let roundToken = 0;
+  let stageMood = "";
 
   function tasteId() { return (K.getSettings().taste) || "kawaii"; }
   function titles() { return (W.bossTitles && W.bossTitles[tasteId()]) || W.bossTitles.kawaii; }
@@ -136,11 +137,20 @@
     return { boss: "img/" + cast.boss + ".jpg", minion: "img/" + cast.minion + ".jpg" };
   }
   function liveMinions() {
-    return [...document.querySelectorAll("#boss-minions .boss-minion:not(.out)")];
+    return [...document.querySelectorAll(".boss-minion:not(.out)")]
+      .sort((a, b) => Number(a.dataset.idx) - Number(b.dataset.idx));
+  }
+  function reflowMinions() {
+    const left = document.getElementById("boss-minions-l");
+    const right = document.getElementById("boss-minions-r");
+    if (!left || !right) return;
+    const live = liveMinions();
+    live.filter((el) => Number(el.dataset.idx) % 2 === 0).forEach((el) => left.appendChild(el));
+    live.filter((el) => Number(el.dataset.idx) % 2 === 1).reverse().forEach((el) => right.appendChild(el));
   }
   function addMinionEl(animate, idx) {
-    const box = document.getElementById("boss-minions");
-    if (!box) return null;
+    const host = document.getElementById("boss-minions-l") || document.getElementById("boss-minions-r");
+    if (!host) return null;
     if (idx == null) idx = nextMinionIndex();
     const name = minionName(idx);
     const el = document.createElement("div");
@@ -155,13 +165,15 @@
     tag.textContent = name;
     el.appendChild(img);
     el.appendChild(tag);
-    box.appendChild(el);
+    host.appendChild(el);
+    reflowMinions();
     return el;
   }
   function snapMinions(left) {
-    const box = document.getElementById("boss-minions");
-    if (!box) return;
-    box.innerHTML = "";
+    const l = document.getElementById("boss-minions-l");
+    const r = document.getElementById("boss-minions-r");
+    if (l) l.innerHTML = "";
+    if (r) r.innerHTML = "";
     const n = minionCount(left);
     for (let i = 0; i < n; i++) addMinionEl(false, i);
   }
@@ -215,21 +227,21 @@
     renderHp();
   }
 
-  async function setBuddyMood(mood) {
-    const wrap = document.getElementById("buddy-wrap");
-    wrap.className = "buddy-wrap " + (mood || "");
-    wrap.innerHTML = await C.faceHtml(player(), mood || "normal", 120)
-      + "<div class='buddy-name' id='buddy-line'></div>";
-    document.getElementById("buddy-line").textContent = nm(player()) + "の しれん";
+  async function paintStage(mood) {
+    const bg = document.getElementById("quiz-stage-bg");
+    if (bg) bg.src = sceneSrc();
+    const box = document.getElementById("quiz-stage-buddy");
+    if (box && (stageMood !== mood || !box.children.length)) {
+      stageMood = mood;
+      box.innerHTML = await C.faceHtml(player(), mood || "normal", 84);
+    }
   }
 
   function renderQuestion() {
     const w = quiz.queue[0];
     document.getElementById("q-place").textContent = titles().title;
-    const banner = document.querySelector("#quiz-banner img");
-    if (banner) banner.src = sceneSrc();
     renderHp();
-    setBuddyMood("normal");
+    paintStage((quiz.streak || 0) >= 2 ? "happy" : "normal");
     document.getElementById("english").textContent = w.en;
     const ex = document.getElementById("example");
     if (ex) ex.innerHTML = K.exampleHtml(w);
@@ -283,18 +295,20 @@
     });
     if (!ok) btn.classList.add("ng");
     K.recordAnswer(w.en, ok);
+    quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     quiz.log.push({ en: w.en, w: w, ok: ok });
     const prevLeft = uniqueLeft();
     quiz.queue.shift();
     if (!ok) insertLater(quiz.queue, w);
     if (quiz.queue.length) saveRun();
     else clearSavedRun();
-    const left = uniqueLeft();
-    const beatMinion = ok && minionCount(prevLeft) > minionCount(left);
-    renderHp();
-    setBuddyMood(ok ? "happy" : "sad");
+    const beatMinion = ok && minionCount(prevLeft) > minionCount(uniqueLeft());
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;
+    await paintStage(ok ? "happy" : "sad");
+    if (K.playStageCombo) await K.playStageCombo(document.getElementById("quiz-stage"), ok, quiz.streak || 0);
+    if (!quiz || quiz.token !== token) return;
+    renderHp();
     if (beatMinion) {
       const beatenName = (liveMinions()[0] && liveMinions()[0].dataset.name) || "手下";
       await Promise.all([fadeOneMinion(), showFanfare(beatenName + "をたおした！")]);
@@ -349,10 +363,13 @@
       queue: items.slice(),
       startN: items.length,
       log: [],
+      streak: 0,
       token: ++roundToken,
       phases: { p1: false, p2: false }
     };
     saveRun();
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     show("quiz");
     resetRoster();
     renderQuestion();
@@ -372,10 +389,13 @@
       queue: next.queue,
       startN: next.startN,
       log: next.log,
+      streak: 0,
       token: next.token,
       phases: next.phases
     };
     saveRun();
+    stageMood = "";
+    if (K.preloadComboFx) K.preloadComboFx();
     show("quiz");
     resetRoster();
     renderQuestion();
