@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260920e" />
+  <link rel="stylesheet" href="style.css?v=20260923b" />
 </head>
 <body>
   <section id="title" class="screen on">
@@ -24,8 +24,7 @@
     </div>
     <div id="lock-box" class="stage-card lock-box" hidden>
       <h2>これはまだ遊べません</h2>
-      <p>いままちがえている単語がないと、しれんに入れません。</p>
-      <p class="sub">おかいものや冒険でまちがえた語が、ここに集まります。リストで正解すると消えます。</p>
+      <p>いままちがえている単語がありません。おかいものや冒険でまちがえると、ここに集まります。</p>
       <div class="btn-row">
         <a class="btn" href="shop.html">おかいものライブ</a>
         <a class="btn" href="rescue.html">ともだちをたすける</a>
@@ -140,12 +139,14 @@
       <p class="guide-kicker">さいごのしれん</p>
       <h2>進め方</h2>
       <ol>
-        <li>いまもまちがえている単語だけが出ます。おかいもの・冒険・対戦でまちがえた語が対象です。</li>
-        <li>正解すると、その語はリストから消えます。まちがえると、少しあとに同じ語がもどってきます。</li>
-        <li>敵の体力は、今までやった単語のうち、まだまちがえている分です。すでに正解した分は、戦いの最初から削れています。</li>
-        <li>のこり50問ごとに手下が一匹います。ボスは真ん中、手下は左右に並び、いちばん外側から倒します。いまたたかっている相手のゲージが減り、尽きるとその手下をたおせます。手下を全部たおすと、ボスのゲージになります。</li>
-        <li>「続きは今度」を押すと、単語の表が保存されます。つぎに来たときは、そこから続けられます。</li>
+        <li>いまもまちがえている単語だけが出ます。</li>
+        <li>正解するとリストから消えます。まちがえると、少しあとに同じ語が戻ります。</li>
+        <li>ボスは真ん中、手下は左右です。外側の手下から倒します。残りの語が、いまの相手の体力です。</li>
       </ol>
+      <details class="fold">
+        <summary>体力と中断</summary>
+        <p>体力の上限は、今までやった単語の数です。すでに正解した分は、最初から減っています。のこり50問ごとに手下が一匹いて、全部たおすとボスのゲージになります。「続きは今度」を押すと表が保存され、つぎはそこから続けられます。</p>
+      </details>
       <label class="guide-skip"><input type="checkbox" id="guide-skip" /> 次回以降表示しない</label>
       <button type="button" class="guide-go" id="guide-go">ゲーム画面へ</button>
     </div>

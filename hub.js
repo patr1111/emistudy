@@ -1,7 +1,6 @@
 (function () {
   const K = window.Kirameki;
   const C = window.KiramekiChars;
-  const BOARD_URL = "";
   function show(id) {
     document.querySelectorAll(".screen").forEach((el) => el.classList.remove("on"));
     document.getElementById(id).classList.add("on");
@@ -192,7 +191,7 @@
     const n = K.levelCount();
     const texts = K.getSettings().levelPrizeTexts || {};
     if (count) {
-      count.textContent = "いまの級だと Lv1〜Lv" + n + " です。150語で1レベルです。";
+      count.textContent = "Lv1〜Lv" + n + "。150語で1レベルです。";
     }
     box.innerHTML = "";
     for (let lv = 1; lv <= n; lv++) {
@@ -230,10 +229,9 @@
     const clearedNow = K.clearedInSelected();
     const clearedAll = (K.getProgress().clearedEns || []).length;
     document.getElementById("level-count").textContent =
-      "いまチェックしている級の出題は " + n + "語です。" + (st.abstract ? "抽象的な語を含みます。" : "抽象的な語は外しています。") +
-      " この級で答えた " + (n - left) + "語は、どのゲームの本編でも出ません。";
+      "出題は " + n + "語です。答えた " + (n - left) + "語は、本編には出ません。";
     document.getElementById("cleared-count").textContent =
-      "この級で終わったのは " + clearedNow + "語です。級を変えても残っている記録は、あわせて " + clearedAll + "語です。";
+      "戻せるのは、この級の " + clearedNow + "語です。ほかの級もあわせると " + clearedAll + "語残っています。";
     document.getElementById("shop-prize-text").value = st.shopPrizeText;
     document.getElementById("rescue-prize-text").value = st.rescuePrizeText;
     document.getElementById("boss-prize-text").value = st.bossPrizeText;
@@ -353,7 +351,6 @@
     }
     document.querySelectorAll('a[href^="#"]').forEach((a) => {
       a.addEventListener("click", (ev) => {
-        if (a.id === "board-link") return;
         const id = (a.getAttribute("href") || "").slice(1);
         const target = id && document.getElementById(id);
         if (!target) return;
@@ -365,21 +362,6 @@
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
-    const board = document.getElementById("board-link");
-    const boardNote = document.getElementById("board-note");
-    if (board) {
-      if (BOARD_URL) {
-        board.href = BOARD_URL;
-        board.target = "_blank";
-        board.rel = "noopener noreferrer";
-        if (boardNote) boardNote.textContent = "別のページが開きます。";
-      } else {
-        board.addEventListener("click", (ev) => {
-          ev.preventDefault();
-          K.toast("掲示板のURLは後日掲載します");
-        });
-      }
-    }
     document.getElementById("adult-back").addEventListener("click", () => {
       refresh();
       show("hub");

@@ -139,11 +139,11 @@
     if (!hint) return;
     const cur = cursor();
     if (cur.allDone) {
-      hint.textContent = "全部できたよ。できたばしょの「記録を消す」でもう一度できるよ。";
+      hint.textContent = "全部できたよ。できたばしょは、もう一度できるよ。";
     } else if (cur.stop > 0 || cur.doneRounds > 0) {
-      hint.textContent = "おかいものも おなじ すすみだよ。1か所を3回やったら次へ。できたばしょの「記録を消す」で、そこからもう一度できるよ。";
+      hint.textContent = "できたばしょの「記録を消す」で、もう一度できるよ。";
     } else {
-      hint.textContent = "おかいものも おなじ すすみだよ。かがやいてるばしょから、ひとつずつ いこう。";
+      hint.textContent = "かがやいてるばしょからいこう。";
     }
   }
   async function renderFaces(boxId) {
@@ -417,7 +417,7 @@
     WORDS = K.wordQueue();
     document.getElementById("title-level").textContent =
       K.levelsLabel() + "　Lv" + K.levelDisplay() + "　残り " + K.unclearedWords().length + " / " + WORDS.length + "ご";
-    document.getElementById("open-story").textContent = pal() + "の ところまで、いまのレベルのばしょを ひとつずつ いこう。1か所を3回やったら次へ。おかいものも おなじ すすみだよ。";
+    document.getElementById("open-story").textContent = pal() + "の ところまでいこう。";
     await renderFaces("open-faces");
     renderMap();
     if (!WORDS.length) K.toast("この級の単語がまだないよ。管理画面で級を変えてね");
