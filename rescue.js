@@ -229,6 +229,7 @@
     }
   }
   async function renderQuestion() {
+    if (K.clearStageCombo) K.clearStageCombo(document.getElementById("play-stage"));
     const w = quiz.items[quiz.i];
     document.getElementById("english").textContent = w.en;
     const ex = document.getElementById("example");
@@ -279,6 +280,7 @@
     quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     K.recordAnswer(w.en, ok);
     quiz.log.push({ en: w.en, w: w, ok: ok });
+    if (K.playAnswerSound) K.playAnswerSound(ok, quiz.streak || 0);
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;
     if (ok) await flyToHold(btn);
@@ -318,7 +320,7 @@
   }
   function renderMiss() {
     const rows = K.missEntries();
-    K.fillMissSummary();
+    K.fillMissSummary(rows);
     const list = document.getElementById("miss-list");
     if (!list) return;
     list.innerHTML = rows.length

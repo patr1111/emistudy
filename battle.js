@@ -171,6 +171,7 @@
     fillProgress(quiz.i);
   }
   function renderQuestion() {
+    if (K.clearStageCombo) K.clearStageCombo(document.getElementById("quiz-stage"));
     const w = quiz.items[quiz.i];
     renderTurn();
     const streak = isKid(quiz.i) ? (quiz.kidStreak || 0) : (quiz.parStreak || 0);
@@ -285,6 +286,7 @@
     if (isKid(turnI)) quiz.kidStreak = ok ? (quiz.kidStreak || 0) + 1 : 0;
     else quiz.parStreak = ok ? (quiz.parStreak || 0) + 1 : 0;
     const streak = isKid(turnI) ? (quiz.kidStreak || 0) : (quiz.parStreak || 0);
+    if (K.playAnswerSound) K.playAnswerSound(ok, streak);
     renderTurn();
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;

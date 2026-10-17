@@ -238,6 +238,7 @@
   }
 
   function renderQuestion() {
+    if (K.clearStageCombo) K.clearStageCombo(document.getElementById("quiz-stage"));
     const w = quiz.queue[0];
     document.getElementById("q-place").textContent = titles().title;
     renderHp();
@@ -297,6 +298,7 @@
     K.recordAnswer(w.en, ok);
     quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     quiz.log.push({ en: w.en, w: w, ok: ok });
+    if (K.playAnswerSound) K.playAnswerSound(ok, quiz.streak || 0);
     const prevLeft = uniqueLeft();
     quiz.queue.shift();
     if (!ok) insertLater(quiz.queue, w);

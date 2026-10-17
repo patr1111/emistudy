@@ -248,6 +248,7 @@
   }
 
   async function renderQuestion() {
+    if (K.clearStageCombo) K.clearStageCombo(document.getElementById("quiz-stage"));
     const w = quiz.items[quiz.i];
     document.getElementById("q-place").textContent = quiz.review ? "たすけてリスト" : pl(quiz.place);
     document.getElementById("q-buddy-pill").textContent = nm(quiz.buddy);
@@ -295,6 +296,7 @@
     K.recordAnswer(w.en, ok);
     quiz.streak = ok ? (quiz.streak || 0) + 1 : 0;
     quiz.log.push({ en: w.en, w: w, ok: ok });
+    if (K.playAnswerSound) K.playAnswerSound(ok, quiz.streak || 0);
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;
     if (ok) await flyToHold(btn);
@@ -355,7 +357,7 @@
 
   function renderMiss() {
     const rows = K.missEntries();
-    K.fillMissSummary();
+    K.fillMissSummary(rows);
     document.getElementById("miss-list").innerHTML = rows.length
       ? rows.map((r) => "<div class='miss-row'><span>" + K.esc(r.en) + "</span><span class='ja'>" + K.esc(r.ja).replace(/\n/g, "<br>") + "</span><span>×" + r.wrong + "</span></div>").join("")
       : "まだ まちがいは ないよ。";

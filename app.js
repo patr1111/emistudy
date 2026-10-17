@@ -233,7 +233,9 @@
       imageIds: {}
     };
   }
+  let storeCache = null;
   function readAll() {
+    if (storeCache) return storeCache;
     try {
       const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
       if (!s || typeof s !== "object") return blankAll();
@@ -265,8 +267,9 @@
         if (CORE_KEYS.indexOf(k) >= 0 || GAME_BLANKS[k]) return;
         if (s[k] && typeof s[k] === "object") out[k] = s[k];
       });
+      storeCache = out;
       if (adopted || seenChanged) writeAll(out);
-      return out;
+      return storeCache;
     } catch (e) {
       return blankAll();
     }
@@ -283,7 +286,11 @@
       if (out[k] === undefined && k !== "images") out[k] = data[k];
     });
     localStorage.setItem(STORE_KEY, JSON.stringify(out));
+    storeCache = out;
   }
+  window.addEventListener("storage", (ev) => {
+    if (ev.key === STORE_KEY) storeCache = null;
+  });
   function getSettings() { return readAll().settings; }
   function saveSettings(patch) {
     const all = readAll();
@@ -579,6 +586,15 @@
   }
 
   function allWords() { return global.WORDS || []; }
+  let wordIndex = null;
+  function wordByEn() {
+    const src = allWords();
+    if (wordIndex && wordIndex.src === src) return wordIndex.map;
+    const map = new Map();
+    src.forEach((w) => { if (w && w.en && !map.has(w.en)) map.set(w.en, w); });
+    wordIndex = { src: src, map: map };
+    return map;
+  }
   function wordsForLevels(levelIds) {
     const st = getSettings();
     const set = new Set(levelIds && levelIds.length ? levelIds : st.levels);
@@ -906,15 +922,15 @@
     p.clearedEns = (p.clearedEns || []).filter((en) => !allowed.has(en));
     saveProgress(p);
   }
-  function sense(w, which) {
-    const st = getSettings();
+  function sense(w, which, st) {
+    st = st || getSettings();
     if (st.kanji === "none") return which === 2 ? (w.k2 || "") : w.k;
     if (st.kanji === "full") return which === 2 ? (w.j2 || "") : w.j;
     return which === 2 ? (w.s2 || "") : w.s;
   }
-  function jaLines(w) { return [sense(w, 1), sense(w, 2)].filter(Boolean); }
-  function jaText(w) { return jaLines(w).join("\n"); }
-  function jaHtml(w) { return jaLines(w).map(esc).join("<br>"); }
+  function jaLines(w, st) { return [sense(w, 1, st), sense(w, 2, st)].filter(Boolean); }
+  function jaText(w, st) { return jaLines(w, st).join("\n"); }
+  function jaHtml(w, st) { return jaLines(w, st).map(esc).join("<br>"); }
   function exampleHtml(w) {
     const ex = (w && w.ex) ? String(w.ex) : "";
     if (!ex) return "";
@@ -1032,12 +1048,13 @@
   }
   function missEntries() {
     const p = getProgress();
-    const pool = allWords();
+    const byEn = wordByEn();
+    const st = getSettings();
     return Object.entries(p.answers || {})
       .filter(([, a]) => a.last === "まちがい" || (!a.last && (a.wrong || 0) > 0))
       .map(([en, a]) => {
-        const w = pool.find((x) => x.en === en) || { en, k: en, s: en, j: en };
-        return { en, ja: jaText(w), w: w, ...a };
+        const w = byEn.get(en) || { en, k: en, s: en, j: en };
+        return { en, ja: jaText(w, st), w: w, ...a };
       })
       .sort((a, b) => b.wrong - a.wrong || a.en.localeCompare(b.en));
   }
@@ -1098,12 +1115,13 @@
     }
     const set = new Set(ids);
     const answers = p.answers || {};
+    const st = getSettings();
     const blank = { seen: 0, right: 0, wrong: 0, last: "", lastAt: "", firstWrongAt: "" };
     return allWords().filter((w) => set.has(w.lv)).map((w) => {
       const a = answers[w.en] || blank;
       return {
         en: w.en,
-        ja: jaText(w),
+        ja: jaText(w, st),
         lv: w.lv,
         lvName: levelName(w.lv),
         seen: a.seen || 0,
@@ -1121,21 +1139,31 @@
     rows.forEach((r) => { if (r.seen > 0) done += 1; });
     return { total: rows.length, done: done, missed: missEntries().length };
   }
-  function fillMissSummary() {
-    const st = rosterStats();
+  function playSummary(missCount) {
+    const queueWords = wordQueue();
+    const answers = getProgress().answers || {};
+    let played = 0;
+    queueWords.forEach((w) => {
+      if (((answers[w.en] || {}).seen || 0) > 0) played += 1;
+    });
+    return {
+      queue: queueWords.length,
+      played: played,
+      missed: missCount == null ? missEntries().length : missCount
+    };
+  }
+  function fillMissSummary(rows) {
+    const info = playSummary(rows ? rows.length : null);
     const pill = document.getElementById("miss-count");
-    if (pill) pill.textContent = st.done ? (st.missed + " / " + st.done) : (st.missed + "ご");
+    if (pill) pill.textContent = info.played + " / " + info.queue;
     const line = document.getElementById("miss-stat");
     if (!line) return;
-    if (!st.total) {
+    if (!info.queue) {
       line.textContent = "まだ級の単語がありません";
+      if (pill) pill.textContent = "0ご";
       return;
     }
-    if (!st.done) {
-      line.innerHTML = "全部 <b>" + st.total + "</b>ご　まだやってないよ";
-      return;
-    }
-    line.innerHTML = "やった <b>" + st.done + "</b> / 全部 <b>" + st.total + "</b>ご<br>そのうち まちがい <b>" + st.missed + "</b>ご";
+    line.innerHTML = "やった <b>" + info.played + "</b> / <b>" + info.queue + "</b>ご<br>まちがい <b>" + info.missed + "</b>ご";
   }
   function csvCell(v) {
     const s = String(v == null ? "" : v);
@@ -1331,6 +1359,100 @@
       im.src = src;
     });
   }
+  let answerCtx = null;
+  let answerMaster = null;
+  let answerNodes = [];
+  let comboGen = 0;
+  function answerAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!answerCtx) {
+      answerCtx = new AC();
+      answerMaster = answerCtx.createGain();
+      answerMaster.gain.value = 0.72;
+      answerMaster.connect(answerCtx.destination);
+    }
+    if (answerCtx.state === "suspended") answerCtx.resume();
+    return answerCtx;
+  }
+  function stopAnswerSound() {
+    const old = answerNodes;
+    answerNodes = [];
+    old.forEach((osc) => {
+      try { osc.stop(); } catch (e) {}
+    });
+  }
+  function answerTone(ctx, freq, t0, dur, type, peak) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const attack = Math.min(0.02, dur * 0.3);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g);
+    g.connect(answerMaster);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.04);
+    answerNodes.push(osc);
+  }
+  function playAnswerSound(ok, streak) {
+    const ctx = answerAudio();
+    if (!ctx || !answerMaster) return;
+    stopAnswerSound();
+    const t = ctx.currentTime + 0.02;
+    if (!ok) {
+      answerTone(ctx, 466.16, t, 0.12, "triangle", 0.1);
+      answerTone(ctx, 349.23, t + 0.09, 0.22, "triangle", 0.09);
+      answerTone(ctx, 233.08, t + 0.08, 0.26, "sine", 0.045);
+      return;
+    }
+    const n = Math.max(1, Math.min(streak || 1, 12));
+    const scale = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093];
+    const count = Math.min(scale.length, n);
+    const gap = n >= 7 ? 0.068 : n >= 5 ? 0.082 : n >= 3 ? 0.105 : 0.135;
+    const lift = Math.pow(2, Math.min(Math.max(n - 7, 0), 6) / 12);
+    const peak = n >= 6 ? 0.07 : n >= 3 ? 0.09 : 0.12;
+    const wave = n >= 4 ? "triangle" : "sine";
+    for (let i = 0; i < count; i++) {
+      const freq = scale[i] * lift;
+      answerTone(ctx, freq, t + i * gap, 0.18 + Math.min(n, 6) * 0.025, wave, peak);
+      if (n >= 3) answerTone(ctx, freq * 2, t + i * gap + 0.012, 0.1, "sine", peak * 0.3);
+    }
+    if (n >= 5) {
+      const chordAt = t + count * gap + 0.02;
+      [523.25, 659.25, 783.99, 1046.5].forEach((f) => {
+        answerTone(ctx, f * lift, chordAt, n >= 8 ? 0.55 : 0.4, "triangle", n >= 8 ? 0.055 : 0.042);
+      });
+      const sparks = n >= 7 ? [1567.98, 2093, 2637.02, 3135.96] : [1567.98, 2093, 2637.02];
+      sparks.forEach((f, i) => {
+        answerTone(ctx, f * lift, chordAt + 0.04 + i * 0.05, 0.12, "sine", 0.045);
+      });
+    } else if (n >= 2) {
+      const last = scale[count - 1] * lift;
+      answerTone(ctx, last * 2, t + (count - 1) * gap, 0.14, "sine", peak * 0.38);
+    } else {
+      answerTone(ctx, 783.99, t + 0.01, 0.2, "sine", 0.05);
+    }
+  }
+  function wipeStageCombo(stage) {
+    if (!stage) return;
+    stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");
+    const fx = stage.querySelector(".mini-stage-fx");
+    const yell = stage.querySelector(".mini-yell");
+    if (fx) fx.innerHTML = "";
+    if (yell) {
+      yell.textContent = "";
+      yell.style.animation = "none";
+      void yell.offsetWidth;
+      yell.style.animation = "";
+    }
+  }
+  function clearStageCombo(stage) {
+    comboGen += 1;
+    wipeStageCombo(stage);
+  }
   function comboTier(ok, streak) {
     if (!ok) return -1;
     if (streak >= 5) return 3;
@@ -1341,17 +1463,27 @@
   function playStageCombo(stage, ok, streak) {
     preloadComboFx();
     if (!stage) return Promise.resolve();
+    const gen = (comboGen += 1);
     const fx = stage.querySelector(".mini-stage-fx");
     const yell = stage.querySelector(".mini-yell");
     const tier = comboTier(ok, streak);
     stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");
     void stage.offsetWidth;
     if (fx) fx.innerHTML = "";
-    if (yell) yell.textContent = "";
+    if (yell) {
+      yell.textContent = "";
+      yell.style.animation = "";
+    }
+    const done = (waitMs) => new Promise((resolve) => {
+      setTimeout(() => {
+        if (gen === comboGen) wipeStageCombo(stage);
+        resolve();
+      }, waitMs);
+    });
     if (tier < 0) {
       stage.classList.add("combo-break");
       if (yell) yell.textContent = "おしい！";
-      return new Promise((r) => setTimeout(r, 420));
+      return done(420);
     }
     stage.classList.add(tier === 0 ? "combo-hit" : ("combo-" + tier));
     if (yell) {
@@ -1372,14 +1504,7 @@
       if (fx) fx.appendChild(img);
     }
     const waitMs = tier >= 3 ? 1100 : tier === 2 ? 900 : tier === 1 ? 760 : 520;
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        stage.classList.remove("combo-hit", "combo-1", "combo-2", "combo-3", "combo-break");
-        if (fx) fx.innerHTML = "";
-        if (yell) yell.textContent = "";
-        resolve();
-      }, waitMs);
-    });
+    return done(waitMs);
   }
   function showPrize(box, allDone, game) {
     if (!box) return;
@@ -1495,6 +1620,6 @@
     canSpeak, speakEnglish, bindSpeakButtons, setSpeakText, stopSpeak,
     recordAnswer, missEntries, rosterEntries, rosterStats, fillMissSummary, downloadMissExcel,
     seenWordItems, clearedWordItems, missWordItems, battleStatus, pickBattleItems,
-    exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, playStageCombo, preloadComboFx, showPrize, bindGuide
+    exportBackup, importBackupText, maybeAutoExport, flashTimes, waitReact, playStageCombo, clearStageCombo, playAnswerSound, preloadComboFx, showPrize, bindGuide
   };
 })(window);
