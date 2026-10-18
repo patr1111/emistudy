@@ -63,7 +63,8 @@
         log: quiz.log.map((x) => ({ en: x.en, ok: !!x.ok })),
         phases: quiz.phases || { p1: false, p2: false },
         peakHp: quiz.startN || uniqueLeft(),
-        startN: quiz.startN || uniqueLeft()
+        startN: quiz.startN || uniqueLeft(),
+        minionBase: quiz.minionBase || 0
       }
     });
   }
@@ -94,8 +95,17 @@
       startN: new Set(queue.map((w) => w.en)).size,
       log: log,
       token: ++roundToken,
-      phases: raw.phases || { p1: false, p2: false }
+      phases: raw.phases || { p1: false, p2: false },
+      minionBase: restoredMinionBase(raw, queue)
     };
+  }
+  function restoredMinionBase(raw, queue) {
+    const saved = Number(raw && raw.minionBase);
+    if (Number.isFinite(saved) && saved >= 0) return saved;
+    const startLeft = Number(raw && raw.startN) || 0;
+    const now = new Set((queue || []).map((w) => w.en)).size;
+    if (!startLeft || startLeft <= now) return 0;
+    return Math.max(0, minionCount(startLeft) - minionCount(now));
   }
 
   function minionCount(left) {
@@ -106,19 +116,22 @@
   }
   function nextMinionIndex() {
     const idxs = liveMinions().map((el) => Number(el.dataset.idx));
-    if (!idxs.length) return 0;
+    if (!idxs.length) return (quiz && quiz.minionBase) || 0;
     return Math.max.apply(null, idxs) + 1;
+  }
+  function targetHp(left) {
+    if (minionCount(left) <= 0) return Math.max(0, left);
+    const rem = left % MINION_HP;
+    return rem === 0 ? 1 : rem + 1;
   }
   function currentTarget(left) {
     const n = minionCount(left);
     if (n > 0) {
       const current = liveMinions()[0];
-      const name = (current && current.dataset.name) || minionName(0);
-      const rem = left % MINION_HP;
-      const hp = rem === 0 ? 1 : rem;
-      return { name: name, hp: hp, max: MINION_HP, kind: "minion" };
+      const name = (current && current.dataset.name) || minionName((quiz && quiz.minionBase) || 0);
+      return { name: name, hp: targetHp(left), max: MINION_HP, kind: "minion" };
     }
-    return { name: "ボス", hp: left, max: MINION_HP, kind: "boss" };
+    return { name: "ボス", hp: targetHp(left), max: MINION_HP, kind: "boss" };
   }
   function markCurrent(left) {
     const n = minionCount(left);
@@ -175,7 +188,8 @@
     if (l) l.innerHTML = "";
     if (r) r.innerHTML = "";
     const n = minionCount(left);
-    for (let i = 0; i < n; i++) addMinionEl(false, i);
+    const base = (quiz && quiz.minionBase) || 0;
+    for (let i = 0; i < n; i++) addMinionEl(false, base + i);
   }
   function growMinions(left) {
     const want = minionCount(left);
@@ -302,19 +316,25 @@
     const prevLeft = uniqueLeft();
     quiz.queue.shift();
     if (!ok) insertLater(quiz.queue, w);
+    const beatMinion = ok && minionCount(prevLeft) > minionCount(uniqueLeft());
+    let beatenName = "";
+    if (beatMinion) {
+      const beaten = liveMinions()[0];
+      beatenName = (beaten && beaten.dataset.name) || "手下";
+      quiz.minionBase = beaten ? (Number(beaten.dataset.idx) + 1) : ((quiz.minionBase || 0) + 1);
+    }
     if (quiz.queue.length) saveRun();
     else clearSavedRun();
-    const beatMinion = ok && minionCount(prevLeft) > minionCount(uniqueLeft());
     await flash(ok, w);
     if (!quiz || quiz.token !== token) return;
     await paintStage(ok ? "happy" : "sad");
     if (K.playStageCombo) await K.playStageCombo(document.getElementById("quiz-stage"), ok, quiz.streak || 0);
     if (!quiz || quiz.token !== token) return;
-    renderHp();
     if (beatMinion) {
-      const beatenName = (liveMinions()[0] && liveMinions()[0].dataset.name) || "手下";
       await Promise.all([fadeOneMinion(), showFanfare(beatenName + "をたおした！")]);
+      if (!quiz || quiz.token !== token) return;
     }
+    renderHp();
     if (!quiz || quiz.token !== token) return;
     if (!quiz.queue.length) finishBoss();
     else renderQuestion();
@@ -367,7 +387,8 @@
       log: [],
       streak: 0,
       token: ++roundToken,
-      phases: { p1: false, p2: false }
+      phases: { p1: false, p2: false },
+      minionBase: 0
     };
     saveRun();
     stageMood = "";
@@ -393,7 +414,8 @@
       log: next.log,
       streak: 0,
       token: next.token,
-      phases: next.phases
+      phases: next.phases,
+      minionBase: next.minionBase || 0
     };
     saveRun();
     stageMood = "";
